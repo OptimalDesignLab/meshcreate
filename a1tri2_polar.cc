@@ -6,9 +6,13 @@
 #include <apfNumbering.h>
 #include <apfShape.h>
 
+#include <cmath>  // trig functions
+
 //#include "funcs1.h"
 //#include "apfSBPShape.h"
 
+// create a mesh for a sector of a circle
+// all angles measured in radians
 int main(int argc, char** argv)
 {
   MPI_Init(&argc,&argv);
@@ -23,56 +27,77 @@ int main(int argc, char** argv)
 */
   // Problem 3
   std::cout << "Problem 3 output: " << std::endl;
-  int numElx = 4;  // number of elements in x direction
-  int numEly = 4;  // nuber of elements in y direction
-  double x_spacing = 8.0/numElx;  // spacing of el
-  double y_spacing = 2.0/numEly;
-  double x_i = 0.0;  // x coordinate of lower left corner of current element
-  double y_i = 0.0 ; // y coordinate of lower left corner of current element
-  apf::MeshEntity* vertices[numElx+1][numEly+1];  // hold pointers to all vertices
-  apf::MeshEntity* vertices_i[4];  // hold vertices for a particular element
+  double pi = 3.14159265;
+  int numElr = 10;  // number of elements in r direction
+  int numEltheta = 10;  // nuber of elements in theta direction
+  double r_range = 8.0;  // rmax - rmin
+  double theta_range = M_PI/2.0;  // theta max - theta min
+  double r_spacing = r_range/numElr;  // spacing of el radially
+  double theta_spacing = theta_range/numEltheta;  // spacing of elements circumfrentially
+  double r_0 = 1.0;  // r coordinate of lower left corner of current element
+  double theta_0 = 0.0 ; // theta coordinate of lower left corner of current element
+  double r_i = r_0;
+  double theta_i = theta_0;
+
+  apf::MeshEntity* vertices[numElr+1][numEltheta+1];  // hold pointers to all vertices
+  apf::MeshEntity* vertices_i[3];  // hold vertices for a particular element
   apf::Vector3 coords_i(0.0,0.0,0.0);  // hold coordinates of each point
 //  apf::FieldShape* linear2 = apf::getSBPQuadratic();
-//    apf::FieldShape* linear2 = apf::getLagrange(1);
-//  const char shape_name[] = linear2->getName();
-//  std::cout << "shape name = " << linear2->getName() << std::endl;
-//  apf::changeMeshShape(m, linear2, true);
+
+  // for linear meshes
+  apf::FieldShape* linear2 = apf::getLagrange(1);
+  std::cout << "shape name = " << linear2->getName() << std::endl;
+  apf::changeMeshShape(m, linear2, true);
+
 
 
   // create all vertices
-  for (int j = 0; j < (numEly+1); ++j)  // loop up columns (bottom to top)
+  for (int j = 0; j < (numElr+1); ++j)  // loop from inner radius to outer
   {
-    for (int i = 0; i < (numElx+1); ++i) // loop over rows (left to right)
+    for (int i = 0; i < (numEltheta+1); ++i) // loop from theta0 to theta max, counter clockwise
     {
-       std::cout << "creating point at x = " << x_i << " , y = " << y_i << std::endl;
+ 
+       std::cout << "creating point at r = " << r_i << " , theta = " << theta_i << std::endl;
+       double x_i = r_i*cos(theta_i);
+       double y_i = r_i*sin(theta_i);
        coords_i[0] = x_i;
        coords_i[1] = y_i;
        
        vertices[i][j] = m->createVert(0);
        m->setPoint(vertices[i][j], 0, coords_i);
-       x_i = x_i + x_spacing;
+       r_i = r_i + r_spacing;
     }
-    y_i = y_i + y_spacing;  // increment y_i
-    x_i = 0.0;  // reset x_i to beginning of row
+    theta_i = theta_i + theta_spacing;  // increment y_i
+    r_i = r_0;  // reset x_i to beginning of row
   }  
 
   // build element from verticies
-  for (int j = 0; j < numEly; ++j)
+  for (int j = 0; j < numElr; ++j)
   {
-    for (int i = 0; i < numElx; ++i)
+    for (int i = 0; i < numEltheta; ++i)
     {
-      int el_num = i + numElx*j;
+      int el_num = i + numElr*j;
 //      std::cout << "creating element i = " << i << " , j = " << j << std::endl;
       // get correct vertices
       vertices_i[0] = vertices[i][j];
       vertices_i[1] = vertices[i+1][j];
-      vertices_i[2] = vertices[i+1][j+1];
-      vertices_i[3] = vertices[i][j+1];
+      vertices_i[2] = vertices[i][j+1];
       std::cout << "Element " << el_num << " has verticies "; 
-      std::cout << i + ((numElx+1)*j) << " , " << i+1 + ((numElx+1)*j) << " , " << i+1 + ((numElx+1)*(j+1));
-      std::cout << " , " << i + ((numElx+1)*(j+1)) << std::endl;
+      std::cout << i + ((numElr+1)*j) << " , " << i+1 + ((numElr+1)*j) << " , " << i+1 + ((numElr+1)*(j+1));
+      std::cout << " , " << i + ((numElr+1)*(j+1)) << std::endl;
 //      std::cout << "assembled vertices" << std::endl;
-      apf::buildElement(m, 0, apf::Mesh::QUAD, vertices_i);
+//
+      // counterclockwise ordering
+      apf::buildElement(m, 0, apf::Mesh::TRIANGLE, vertices_i);
+      vertices_i[0] = vertices[i+1][j];
+     vertices_i[1] = vertices[i+1][j+1];
+      vertices_i[2] = vertices[i][j+1];
+      apf::buildElement(m, 0, apf::Mesh::TRIANGLE, vertices_i);
+
+/*
+      vertices_i[1] = vertices[i][[j+1];
+      apf::buildElement(m, 0, apf::Mesh::TRIANGLE, vertices_i);
+*/
      }
   }
 /*
@@ -90,9 +115,13 @@ int main(int argc, char** argv)
   std::cout << "accepted changes" << std::endl;
   m->verify();
   std::cout << "verified" << std::endl;
-
+/*
+ // for quadratic meshes
   apf::FieldShape* linear2 = apf::getSerendipity();
-  apf::changeMeshShape(m, linear2, true);
+//  apf::FieldShape* linear2 = apf::getLagrange(2);
+  apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
+*/
+  std::cout << "changed mesh shape" << std::endl;
   apf::FieldShape* m_shape = m->getShape();
 //  const char shape_name[] = m_shape->getName();
   std::cout << "mesh shape name = " << m_shape->getName() << std::endl;
@@ -125,7 +154,7 @@ int main(int argc, char** argv)
 
 
   // write output and clean up
-  apf::writeVtkFiles("outQuad", m);
+  apf::writeVtkFiles("outTri", m);
   m->writeNative("/users/creanj/meshcreate/meshfiles/");
 /*
   apf::MeshIterator* it = m->begin(2);

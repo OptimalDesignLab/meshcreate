@@ -2,5 +2,5 @@
 module load pumi/core-sim
 set -x
 CXXFLAGS="$CXXFLAGS -g "
-mpicxx $1.cc apfSBPShape.cc $CXXFLAGS -L/users/creanj/atest/ -lfuncs1 `pkg-config --cflags --libs libmds` -Wall -o $1
+mpicxx $1.cc $CXXFLAGS -L/users/creanj/atest/ -lfuncs1 `pkg-config --cflags --libs libmds` -Wall -o $1
 set +x

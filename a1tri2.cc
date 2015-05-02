@@ -23,11 +23,11 @@ int main(int argc, char** argv)
 */
   // Problem 3
   std::cout << "Problem 3 output: " << std::endl;
-  int numElx = 2;  // number of elements in x direction
-  int numEly = 2;  // nuber of elements in y direction
-  double x_spacing = 2.0/numElx;  // spacing of el
+  int numElx = 10;  // number of elements in x direction
+  int numEly = 10;  // nuber of elements in y direction
+  double x_spacing = 8.0/numElx;  // spacing of el
   double y_spacing = 2.0/numEly;
-  double x_0 = -1.0;  // x coordinate of lower left corner of current element
+  double x_0 = -4.0;  // x coordinate of lower left corner of current element
   double y_0 = -1.0 ; // y coordinate of lower left corner of current element
   double x_i = x_0;
   double y_i = y_0;
@@ -70,7 +70,7 @@ int main(int argc, char** argv)
       // get correct vertices
       vertices_i[0] = vertices[i][j];
       vertices_i[1] = vertices[i+1][j];
-      vertices_i[2] = vertices[i+1][j+1];
+      vertices_i[2] = vertices[i][j+1];
       std::cout << "Element " << el_num << " has verticies "; 
       std::cout << i + ((numElx+1)*j) << " , " << i+1 + ((numElx+1)*j) << " , " << i+1 + ((numElx+1)*(j+1));
       std::cout << " , " << i + ((numElx+1)*(j+1)) << std::endl;
@@ -78,6 +78,7 @@ int main(int argc, char** argv)
 //
       // counterclockwise ordering
       apf::buildElement(m, 0, apf::Mesh::TRIANGLE, vertices_i);
+      vertices_i[0] = vertices[i+1][j];
       vertices_i[1] = vertices[i+1][j+1];
       vertices_i[2] = vertices[i][j+1];
       apf::buildElement(m, 0, apf::Mesh::TRIANGLE, vertices_i);
@@ -105,7 +106,8 @@ int main(int argc, char** argv)
   std::cout << "verified" << std::endl;
 
  // for quadratic meshes
-  apf::FieldShape* linear2 = apf::getLagrange(2);
+  apf::FieldShape* linear2 = apf::getSerendipity();
+//  apf::FieldShape* linear2 = apf::getLagrange(2);
   apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
 
   std::cout << "changed mesh shape" << std::endl;
@@ -141,8 +143,8 @@ int main(int argc, char** argv)
 
 
   // write output and clean up
-  apf::writeVtkFiles("outQuad", m);
-  m->writeNative("/users/creanj/atest/meshfiles/");
+  apf::writeVtkFiles("outTri", m);
+  m->writeNative("/users/creanj/meshcreate/meshfiles/");
 /*
   apf::MeshIterator* it = m->begin(2);
   apf::MeshEntity* e = m->iterate(it);
