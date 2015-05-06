@@ -23,8 +23,8 @@ int main(int argc, char** argv)
 */
   // Problem 3
   std::cout << "Problem 3 output: " << std::endl;
-  int numElx = 10;  // number of elements in x direction
-  int numEly = 10;  // nuber of elements in y direction
+  int numElx = 3;  // number of elements in x direction
+  int numEly = 3;  // nuber of elements in y direction
   double x_spacing = 8.0/numElx;  // spacing of el
   double y_spacing = 2.0/numEly;
   double x_0 = -4.0;  // x coordinate of lower left corner of current element

@@ -28,9 +28,9 @@ int main(int argc, char** argv)
   // Problem 3
   std::cout << "Problem 3 output: " << std::endl;
   double pi = 3.14159265;
-  int numElr = 10;  // number of elements in r direction
+  int numElr = 3;  // number of elements in r direction
   int numEltheta = 10;  // nuber of elements in theta direction
-  double r_range = 8.0;  // rmax - rmin
+  double r_range = 2.0;  // rmax - rmin
   double theta_range = M_PI/2.0;  // theta max - theta min
   double r_spacing = r_range/numElr;  // spacing of el radially
   double theta_spacing = theta_range/numEltheta;  // spacing of elements circumfrentially
@@ -50,11 +50,13 @@ int main(int argc, char** argv)
   apf::changeMeshShape(m, linear2, true);
 
 
+  std::cout << "numEltheta = " << numEltheta << " theta_spacing = " << theta_spacing << std::endl;
+
 
   // create all vertices
-  for (int j = 0; j < (numElr+1); ++j)  // loop from inner radius to outer
+  for (int j = 0; j < (numEltheta+1); ++j)  // loop from inner radius to outer
   {
-    for (int i = 0; i < (numEltheta+1); ++i) // loop from theta0 to theta max, counter clockwise
+    for (int i = 0; i < (numElr+1); ++i) // loop from theta0 to theta max, counter clockwise
     {
  
        std::cout << "creating point at r = " << r_i << " , theta = " << theta_i << std::endl;
@@ -65,18 +67,21 @@ int main(int argc, char** argv)
        
        vertices[i][j] = m->createVert(0);
        m->setPoint(vertices[i][j], 0, coords_i);
+//       theta_i = theta_i + theta_spacing;
        r_i = r_i + r_spacing;
     }
+//    theta_i = theta_0;
     theta_i = theta_i + theta_spacing;  // increment y_i
     r_i = r_0;  // reset x_i to beginning of row
+//    r_i = r_i + r_spacing;
   }  
 
   // build element from verticies
-  for (int j = 0; j < numElr; ++j)
+  for (int j = 0; j < numEltheta; ++j)
   {
-    for (int i = 0; i < numEltheta; ++i)
+    for (int i = 0; i < numElr; ++i)
     {
-      int el_num = i + numElr*j;
+      int el_num = i + numEltheta*j;
 //      std::cout << "creating element i = " << i << " , j = " << j << std::endl;
       // get correct vertices
       vertices_i[0] = vertices[i][j];
