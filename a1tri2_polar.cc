@@ -28,8 +28,8 @@ int main(int argc, char** argv)
   // Problem 3
   std::cout << "Problem 3 output: " << std::endl;
   double pi = 3.14159265;
-  int numElr = 3;  // number of elements in r direction
-  int numEltheta = 10;  // nuber of elements in theta direction
+  int numElr = 2;  // number of elements in r direction
+  int numEltheta = 2;  // nuber of elements in theta direction
   double r_range = 2.0;  // rmax - rmin
   double theta_range = M_PI/2.0;  // theta max - theta min
   double r_spacing = r_range/numElr;  // spacing of el radially

@@ -7,7 +7,7 @@
 #include <apfShape.h>
 
 //#include "funcs1.h"
-//#include "apfSBPShape.h"
+#include "apfSBPShape.h"
 
 int main(int argc, char** argv)
 {
@@ -23,11 +23,11 @@ int main(int argc, char** argv)
 */
   // Problem 3
   std::cout << "Problem 3 output: " << std::endl;
-  int numElx = 3;  // number of elements in x direction
+  int numElx = 10;  // number of elements in x direction
   int numEly = 3;  // nuber of elements in y direction
-  double x_spacing = 8.0/numElx;  // spacing of el
+  double x_spacing = 2.0/numElx;  // spacing of el
   double y_spacing = 2.0/numEly;
-  double x_0 = -4.0;  // x coordinate of lower left corner of current element
+  double x_0 = -1.0;  // x coordinate of lower left corner of current element
   double y_0 = -1.0 ; // y coordinate of lower left corner of current element
   double x_i = x_0;
   double y_i = y_0;
@@ -107,51 +107,18 @@ int main(int argc, char** argv)
 
  // for quadratic meshes
   apf::FieldShape* linear2 = apf::getSerendipity();
+  apf::FieldShape* linear2 = apf::getSBPShape(1);
 //  apf::FieldShape* linear2 = apf::getLagrange(2);
   apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
 
   std::cout << "changed mesh shape" << std::endl;
   apf::FieldShape* m_shape = m->getShape();
-//  const char shape_name[] = m_shape->getName();
   std::cout << "mesh shape name = " << m_shape->getName() << std::endl;
-
-  apf::EntityShape* m_entity_quad = m_shape->getEntityShape(apf::Mesh::QUAD);
-/*
-  // get values
-  apf::Vector3 xi(-0.25, -0.25, 0);
-  apf::NewArray<double> vals;
-  m_entity_quad->getValues(xi, vals);
-  std::cout << "values at (-0.25. -0.25, 0) = " << vals[0] << " , " << vals[1] << " , " << vals[2] << " , " << vals[3] << std::endl;
-
-  // get gradients
-  apf::NewArray<apf::Vector3> vals2;
-  m_entity_quad->getLocalGradients(xi, vals2);
-  std::cout << "gradients at (-0.25. -0.25, 0) = " << vals2[0] << " , " << vals2[1] << " , " << vals2[2] << " , " << vals2[3] << std::endl;
-*/
-  // count nodes
-  int numNodes = m_entity_quad->countNodes();
-  std::cout << "number of nodes = " << numNodes << std::endl;
-
-  // check number of nodes for each type of entity
-  bool nodecnt[4];
-  nodecnt[0] = m_shape->countNodesOn(apf::Mesh::VERTEX);
-  nodecnt[1] = m_shape->countNodesOn(apf::Mesh::EDGE);
-  nodecnt[2] = m_shape->countNodesOn(apf::Mesh::TRIANGLE);
-  nodecnt[3] = m_shape->countNodesOn(apf::Mesh::TET);
-//  nodecnt[3] = m_shape->countNodesOn(apf::Mesh::QUAD);
-  std::cout << "nodecounts: " << nodecnt[0] << " , " << nodecnt[1] << " , " << nodecnt[2] << " , " << nodecnt[3] << std::endl;
 
 
   // write output and clean up
   apf::writeVtkFiles("outTri", m);
   m->writeNative("/users/creanj/meshcreate/meshfiles/");
-/*
-  apf::MeshIterator* it = m->begin(2);
-  apf::MeshEntity* e = m->iterate(it);
-  apf::MeshElement* e_el = apf::createMeshElement(m, e);
-  int numI = apf::countIntPoints(e_el, 5);
-  std::cout << numI << " integration points required" << std::endl;
-*/
 
   m->destroyNative();
   apf::destroyMesh(m);
