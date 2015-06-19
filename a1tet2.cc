@@ -24,12 +24,13 @@ int main(int argc, char** argv)
   // Problem 3
   std::cout << "Problem 3 output: " << std::endl;
   // specify number of cubes in each direction
-  // each cube is divided into 5 tets
+  // each cube is divided into 6 tets
+  // the subdivions is the sameon used for Marching Tetrahedra
   // projected onto the xyz planes, you get two triangles in x and y
   // and one in z
-  int numElx = 20;
-  int numEly = 20; 
-  int numElz = 20;
+  int numElx = 1;
+  int numEly = 1; 
+  int numElz = 1;
   double xrange = 2.0;
   double yrange = 2.0;
   double zrange = 2.0;
@@ -48,7 +49,8 @@ int main(int argc, char** argv)
   apf::MeshEntity* tet3[4];
   apf::MeshEntity* tet4[4];
   apf::MeshEntity* tet5[4];
-  apf::MeshEntity** all_tets[5];  // array of tet1 - tet5
+  apf::MeshEntity* tet6[4];
+  apf::MeshEntity** all_tets[6];  // array of tet1 - tet5
   apf::Vector3 coords_i(0.0,0.0,0.0);  // hold coordinates of each point
 //  apf::FieldShape* linear2 = apf::getSBPQuadratic();
 
@@ -99,37 +101,42 @@ int main(int argc, char** argv)
         // get correct vertices
         tet1[0] = vertices[i][j][k];
         tet1[1] = vertices[i+1][j][k];
-        tet1[2] = vertices[i][j+1][k];
-        tet1[3] = vertices[i][j][k+1];
+        tet1[2] = vertices[i+1][j+1][k+1];
+        tet1[3] = vertices[i+1][j][k+1];
         
-        tet2[0] = vertices[i+1][j][k];
-        tet2[1] = vertices[i+1][j+1][k];
-        tet2[2] = vertices[i][j+1][k];
-        tet2[3] = vertices[i+1][j+1][k+1];
+        tet2[0] = vertices[i][j][k];
+        tet2[1] = vertices[i+1][j+1][k+1];
+        tet2[2] = vertices[i+1][j][k+1];
+        tet2[3] = vertices[i][j][k+1];
 
-        tet3[0] = vertices[i+1][j][k];
-        tet3[1] = vertices[i][j+1][k];
-        tet3[2] = vertices[i][j][k+1];
+        tet3[0] = vertices[i][j][k];
+        tet3[1] = vertices[i+1][j][k];
+        tet3[2] = vertices[i+1][j+1][k];
         tet3[3] = vertices[i+1][j+1][k+1];
 
-        tet4[0] = vertices[i+1][j][k];
-        tet4[1] = vertices[i][j][k+1];
-        tet4[2] = vertices[i+1][j][k+1];
+        tet4[0] = vertices[i][j][k];
+        tet4[1] = vertices[i][j+1][k];
+        tet4[2] = vertices[i+1][j+1][k];
         tet4[3] = vertices[i+1][j+1][k+1];
 
-        tet5[0] = vertices[i][j+1][k];
-        tet5[1] = vertices[i][j][k+1];
+        tet5[0] = vertices[i][j][k];
+        tet5[1] = vertices[i][j+1][k];
         tet5[2] = vertices[i+1][j+1][k+1];
         tet5[3] = vertices[i][j+1][k+1];
 
+        tet6[0] = vertices[i][j][k];
+        tet6[1] = vertices[i+1][j+1][k+1];
+        tet6[2] = vertices[i][j+1][k+1];
+        tet6[3] = vertices[i][j][k+1];
 
        all_tets[0] = tet1;
        all_tets[1] = tet2;
        all_tets[2] = tet3;
        all_tets[3] = tet4;
        all_tets[4] = tet5;
+       all_tets[5] = tet6;
        
-       for (int n = 0; n < 5; ++n)
+       for (int n = 0; n < 6; ++n)
        {
         std::cout << "creating local tet number " << n << std::endl;
         apf::buildElement(m, 0, apf::Mesh::TET, all_tets[n]);

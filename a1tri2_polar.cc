@@ -9,7 +9,7 @@
 #include <cmath>  // trig functions
 
 //#include "funcs1.h"
-//#include "apfSBPShape.h"
+#include "apfSBPShape.h"
 
 // create a mesh for a sector of a circle
 // all angles measured in radians
@@ -28,8 +28,8 @@ int main(int argc, char** argv)
   // Problem 3
   std::cout << "Problem 3 output: " << std::endl;
   double pi = 3.14159265;
-  int numElr = 2;  // number of elements in r direction
-  int numEltheta = 2;  // nuber of elements in theta direction
+  int numElr = 3;  // number of elements in r direction
+  int numEltheta = 10;  // nuber of elements in theta direction
   double r_range = 2.0;  // rmax - rmin
   double theta_range = M_PI/2.0;  // theta max - theta min
   double r_spacing = r_range/numElr;  // spacing of el radially
@@ -44,11 +44,12 @@ int main(int argc, char** argv)
   apf::Vector3 coords_i(0.0,0.0,0.0);  // hold coordinates of each point
 //  apf::FieldShape* linear2 = apf::getSBPQuadratic();
 
+/*
   // for linear meshes
   apf::FieldShape* linear2 = apf::getLagrange(1);
   std::cout << "shape name = " << linear2->getName() << std::endl;
   apf::changeMeshShape(m, linear2, true);
-
+*/
 
   std::cout << "numEltheta = " << numEltheta << " theta_spacing = " << theta_spacing << std::endl;
 
@@ -120,18 +121,19 @@ int main(int argc, char** argv)
   std::cout << "accepted changes" << std::endl;
   m->verify();
   std::cout << "verified" << std::endl;
-/*
+
  // for quadratic meshes
-  apf::FieldShape* linear2 = apf::getSerendipity();
+//  apf::FieldShape* linear2 = apf::getSerendipity();
+    apf::FieldShape* linear2 = apf::getSBPShape(2);
 //  apf::FieldShape* linear2 = apf::getLagrange(2);
   apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
-*/
+
   std::cout << "changed mesh shape" << std::endl;
   apf::FieldShape* m_shape = m->getShape();
 //  const char shape_name[] = m_shape->getName();
   std::cout << "mesh shape name = " << m_shape->getName() << std::endl;
 
-  apf::EntityShape* m_entity_quad = m_shape->getEntityShape(apf::Mesh::QUAD);
+//  apf::EntityShape* m_entity_quad = m_shape->getEntityShape(apf::Mesh::QUAD);
 /*
   // get values
   apf::Vector3 xi(-0.25, -0.25, 0);
@@ -144,6 +146,8 @@ int main(int argc, char** argv)
   m_entity_quad->getLocalGradients(xi, vals2);
   std::cout << "gradients at (-0.25. -0.25, 0) = " << vals2[0] << " , " << vals2[1] << " , " << vals2[2] << " , " << vals2[3] << std::endl;
 */
+
+/*  
   // count nodes
   int numNodes = m_entity_quad->countNodes();
   std::cout << "number of nodes = " << numNodes << std::endl;
@@ -156,7 +160,7 @@ int main(int argc, char** argv)
   nodecnt[3] = m_shape->countNodesOn(apf::Mesh::TET);
 //  nodecnt[3] = m_shape->countNodesOn(apf::Mesh::QUAD);
   std::cout << "nodecounts: " << nodecnt[0] << " , " << nodecnt[1] << " , " << nodecnt[2] << " , " << nodecnt[3] << std::endl;
-
+*/
 
   // write output and clean up
   apf::writeVtkFiles("outTri", m);
