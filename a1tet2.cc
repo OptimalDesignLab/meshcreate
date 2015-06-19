@@ -28,9 +28,9 @@ int main(int argc, char** argv)
   // the subdivions is the sameon used for Marching Tetrahedra
   // projected onto the xyz planes, you get two triangles in x and y
   // and one in z
-  int numElx = 1;
-  int numEly = 1; 
-  int numElz = 1;
+  int numElx = 2;
+  int numEly = 2; 
+  int numElz = 2;
   double xrange = 2.0;
   double yrange = 2.0;
   double zrange = 2.0;
@@ -68,7 +68,7 @@ int main(int argc, char** argv)
     {
       for (int i = 0; i < (numElx+1); ++i) // loop over rows (left to right)
       {
-         std::cout << "creating point at x = " << x_i << " , y = " << y_i << std::endl;
+         std::cout << "creating point at x = " << x_i << " , y = " << y_i  << " , z = " << z_i << std::endl;
          coords_i[0] = x_i;
          coords_i[1] = y_i;
          coords_i[2] = z_i;
@@ -104,8 +104,8 @@ int main(int argc, char** argv)
         tet1[2] = vertices[i+1][j+1][k+1];
         tet1[3] = vertices[i+1][j][k+1];
         
-        tet2[0] = vertices[i][j][k];
-        tet2[1] = vertices[i+1][j+1][k+1];
+        tet2[1] = vertices[i][j][k];
+        tet2[0] = vertices[i+1][j+1][k+1];
         tet2[2] = vertices[i+1][j][k+1];
         tet2[3] = vertices[i][j][k+1];
 
@@ -114,13 +114,13 @@ int main(int argc, char** argv)
         tet3[2] = vertices[i+1][j+1][k];
         tet3[3] = vertices[i+1][j+1][k+1];
 
-        tet4[0] = vertices[i][j][k];
-        tet4[1] = vertices[i][j+1][k];
+        tet4[1] = vertices[i][j][k];
+        tet4[0] = vertices[i][j+1][k];
         tet4[2] = vertices[i+1][j+1][k];
         tet4[3] = vertices[i+1][j+1][k+1];
 
-        tet5[0] = vertices[i][j][k];
-        tet5[1] = vertices[i][j+1][k];
+        tet5[1] = vertices[i][j][k];
+        tet5[0] = vertices[i][j+1][k];
         tet5[2] = vertices[i+1][j+1][k+1];
         tet5[3] = vertices[i][j+1][k+1];
 
