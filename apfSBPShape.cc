@@ -3,7 +3,7 @@
 #include "apfVector.h"
 #include "apfMatrix.h"
 #include "apfSBPShape.h"
-
+#include <iostream>
 namespace apf {
 
 class SBPLinear : public FieldShape
@@ -103,6 +103,46 @@ class SBPLinear : public FieldShape
 		
 		}
     };
+
+    class Tetrahedron : public EntityShape
+    {
+      public:
+    
+        void getValues(Mesh*, MeshEntity*,
+            Vector3 const& xi, NewArray<double>& values) const
+        {
+          /*
+          values.allocate(3);
+          values[0] = 1-xi[0]-xi[1];
+          values[1] = xi[0];
+          values[2] = xi[1];
+          */
+          fail("unimplimented getValues() called");
+        }
+        void getLocalGradients(Mesh*, MeshEntity*,
+            Vector3 const&, NewArray<Vector3>& grads) const
+        {
+          /*
+          grads.allocate(3);
+          grads[0] = Vector3(-1,-1,0);
+          grads[1] = Vector3( 1, 0,0);
+          grads[2] = Vector3( 0, 1,0);
+          */
+          fail("unimplimented getLocalGradients() called");
+        }
+    
+        int countNodes() const {return 0;}
+    
+    void alignSharedNodes(Mesh* m, MeshEntity* elem, MeshEntity* shared, int order[])
+    // elem is the triangle 
+    // shared is the entity (edge or vertex) being shared
+    // order[] contains the mapping such that order[i], where i is the local node number, give
+    // the position of that node in the canonical ordering
+    {
+      // nothing to do here for linear element because they have no shared nodes on edges
+    
+    }
+    };
 	
 
 	EntityShape* getEntityShape(int type)
@@ -111,7 +151,7 @@ class SBPLinear : public FieldShape
       static Edge edge;
       static Triangle triangle;
 //      static Quad quad;
-//      static Tetrahedron tet;
+      static Tetrahedron tet;
 //      static Prism prism;
 //      static Pyramid pyramid;
  //     static Hexahedron hex;
@@ -120,7 +160,7 @@ class SBPLinear : public FieldShape
        &edge,
        &triangle,
        NULL, // quad
-       NULL,
+       &tet,
        NULL, // hex
        NULL,  //prism
        NULL};  //pyramid
@@ -254,7 +294,46 @@ class SBPQuadratic : public FieldShape
 		
 		}
     };
-	
+
+    class Tetrahedron : public EntityShape
+    {
+      public:
+    
+        void getValues(Mesh*, MeshEntity*,
+            Vector3 const& xi, NewArray<double>& values) const
+        {
+          /*
+          values.allocate(3);
+          values[0] = 1-xi[0]-xi[1];
+          values[1] = xi[0];
+          values[2] = xi[1];
+          */
+          fail("unimplimented getValues() called");
+        }
+        void getLocalGradients(Mesh*, MeshEntity*,
+            Vector3 const&, NewArray<Vector3>& grads) const
+        {
+          /*
+          grads.allocate(3);
+          grads[0] = Vector3(-1,-1,0);
+          grads[1] = Vector3( 1, 0,0);
+          grads[2] = Vector3( 0, 1,0);
+          */
+          fail("unimplimented getLocalGradients() called");
+        }
+    
+        int countNodes() const {return 0;}
+    
+    void alignSharedNodes(Mesh* m, MeshEntity* elem, MeshEntity* shared, int order[])
+    // elem is the triangle 
+    // shared is the entity (edge or vertex) being shared
+    // order[] contains the mapping such that order[i], where i is the local node number, give
+    // the position of that node in the canonical ordering
+    {
+      // nothing to do here for linear element because they have no shared nodes on edges
+    
+    }
+    };	
 
 	EntityShape* getEntityShape(int type)
     {
@@ -262,7 +341,7 @@ class SBPQuadratic : public FieldShape
       static Edge edge;
       static Triangle triangle;
 //      static Quad quad;
-//      static Tetrahedron tet;
+      static Tetrahedron tet;
 //      static Prism prism;
 //      static Pyramid pyramid;
  //     static Hexahedron hex;
@@ -271,7 +350,7 @@ class SBPQuadratic : public FieldShape
        &edge,
        &triangle,
        NULL, // quad
-       NULL,
+       &tet,
        NULL, // hex
        NULL,  //prism
        NULL};  //pyramid
@@ -446,14 +525,53 @@ class SBPCubic : public FieldShape
 		}
     };
 	
-
+    class Tetrahedron : public EntityShape
+    {
+      public:
+    
+        void getValues(Mesh*, MeshEntity*,
+            Vector3 const& xi, NewArray<double>& values) const
+        {
+          /*
+          values.allocate(3);
+          values[0] = 1-xi[0]-xi[1];
+          values[1] = xi[0];
+          values[2] = xi[1];
+          */
+          fail("unimplimented getValues() called");
+        }
+        void getLocalGradients(Mesh*, MeshEntity*,
+            Vector3 const&, NewArray<Vector3>& grads) const
+        {
+          /*
+          grads.allocate(3);
+          grads[0] = Vector3(-1,-1,0);
+          grads[1] = Vector3( 1, 0,0);
+          grads[2] = Vector3( 0, 1,0);
+          */
+          fail("unimplimented getLocalGradients() called");
+        }
+    
+        int countNodes() const {return 0;}
+    
+    void alignSharedNodes(Mesh* m, MeshEntity* elem, MeshEntity* shared, int order[])
+    // elem is the triangle 
+    // shared is the entity (edge or vertex) being shared
+    // order[] contains the mapping such that order[i], where i is the local node number, give
+    // the position of that node in the canonical ordering
+    {
+      // nothing to do here for linear element because they have no shared nodes on edges
+    
+    }
+    };
+	
 	EntityShape* getEntityShape(int type)
     {
       static Vertex vertex;
       static Edge edge;
       static Triangle triangle;
 //      static Quad quad;
-//      static Tetrahedron tet;
+      static Tetrahedron tet;
 //      static Prism prism;
 //      static Pyramid pyramid;
  //     static Hexahedron hex;
@@ -462,7 +580,7 @@ class SBPCubic : public FieldShape
        &edge,
        &triangle,
        NULL, // quad
-       NULL,
+       &tet,
        NULL, // hex
        NULL,  //prism
        NULL};  //pyramid
@@ -660,14 +778,53 @@ class SBPQuartic : public FieldShape
 		}
     };
 	
-
+    class Tetrahedron : public EntityShape
+    {
+      public:
+    
+        void getValues(Mesh*, MeshEntity*,
+            Vector3 const& xi, NewArray<double>& values) const
+        {
+          /*
+          values.allocate(3);
+          values[0] = 1-xi[0]-xi[1];
+          values[1] = xi[0];
+          values[2] = xi[1];
+          */
+          fail("unimplimented getValues() called");
+        }
+        void getLocalGradients(Mesh*, MeshEntity*,
+            Vector3 const&, NewArray<Vector3>& grads) const
+        {
+          /*
+          grads.allocate(3);
+          grads[0] = Vector3(-1,-1,0);
+          grads[1] = Vector3( 1, 0,0);
+          grads[2] = Vector3( 0, 1,0);
+          */
+          fail("unimplimented getLocalGradients() called");
+        }
+    
+        int countNodes() const {return 0;}
+    
+    void alignSharedNodes(Mesh* m, MeshEntity* elem, MeshEntity* shared, int order[])
+    // elem is the triangle 
+    // shared is the entity (edge or vertex) being shared
+    // order[] contains the mapping such that order[i], where i is the local node number, give
+    // the position of that node in the canonical ordering
+    {
+      // nothing to do here for linear element because they have no shared nodes on edges
+    
+    }
+    };
+	
 	EntityShape* getEntityShape(int type)
     {
       static Vertex vertex;
       static Edge edge;
       static Triangle triangle;
 //      static Quad quad;
-//      static Tetrahedron tet;
+      static Tetrahedron tet;
 //      static Prism prism;
 //      static Pyramid pyramid;
  //     static Hexahedron hex;
@@ -676,7 +833,7 @@ class SBPQuartic : public FieldShape
        &edge,
        &triangle,
        NULL, // quad
-       NULL,
+       &tet,
        NULL, // hex
        NULL,  //prism
        NULL};  //pyramid
@@ -749,6 +906,7 @@ class SBPQuartic : public FieldShape
 			break;
 		  case 5:
 		    xi = Vector3(0.1504720765483788, 0.4247639617258106, 0);
+                    break;
 		  default:
 		    xi = Vector3(0, 0, 0);
 		  }

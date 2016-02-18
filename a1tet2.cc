@@ -7,7 +7,7 @@
 #include <apfShape.h>
 
 //#include "funcs1.h"
-#include "apfSBPShape.h"
+#include "apfSBPShape3.h"
 
 int main(int argc, char** argv)
 {
@@ -55,10 +55,11 @@ int main(int argc, char** argv)
 //  apf::FieldShape* linear2 = apf::getSBPQuadratic();
 
   // for linear meshes
+/*
   apf::FieldShape* linear2 = apf::getLagrange(1);
   std::cout << "shape name = " << linear2->getName() << std::endl;
   apf::changeMeshShape(m, linear2, true);
-
+*/
 
 
   // create all vertices
@@ -184,18 +185,23 @@ int main(int argc, char** argv)
   std::cout << "verified" << std::endl;
 
  // for quadratic meshes
+   int order = 3;
 //  apf::FieldShape* linear2 = apf::getSerendipity();
-//  apf::FieldShape* linear2 = apf::getSBPShape(1);
+  apf::FieldShape* linear2 = apf::getSBP3Shape(4);
 //  apf::FieldShape* linear2 = apf::getLagrange(2);
-//  apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
+  apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
 
   std::cout << "changed mesh shape" << std::endl;
   apf::FieldShape* m_shape = m->getShape();
+  std::cout << "got mesh shape" << std::endl;
   std::cout << "mesh shape name = " << m_shape->getName() << std::endl;
 
 
   // write output and clean up
-  apf::writeVtkFiles("outTet", m);
+  if (order <= 2)
+  {
+    apf::writeVtkFiles("outTet", m);
+  }
   m->writeNative("/users/creanj/meshcreate/meshfiles/");
 
   m->destroyNative();

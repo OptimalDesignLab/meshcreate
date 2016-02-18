@@ -5,7 +5,8 @@
 #include <PCU.h>
 #include <apfNumbering.h>
 #include <apfShape.h>
-
+#include <stdio.h>
+#include <iostream>
 #include <cmath>  // trig functions
 
 //#include "funcs1.h"
@@ -13,8 +14,21 @@
 
 // create a mesh for a sector of a circle
 // all angles measured in radians
+// argv[1] = number of elements in r direction
+// argv[2] = number of elements in theta direction
 int main(int argc, char** argv)
 {
+
+  std::cout << "argc = " << argc << std::endl;
+
+  for (int i = 0; i < argc; ++i)
+  {
+    std::cout << "argv[" << i << "] = " << argv[i] << std::endl;
+    int val = 0;
+    sscanf(argv[i], "%d", &val);
+    std::cout << "val = " << val << std::endl;
+  }
+
   MPI_Init(&argc,&argv);
   PCU_Comm_Init();
   gmi_register_null();
@@ -28,8 +42,10 @@ int main(int argc, char** argv)
   // Problem 3
   std::cout << "Problem 3 output: " << std::endl;
   double pi = 3.14159265;
-  int numElr = 3;  // number of elements in r direction
-  int numEltheta = 10;  // nuber of elements in theta direction
+  int numElr = 0;  // number of elements in r direction
+  sscanf(argv[1], "%d", &numElr);
+  int numEltheta = 0;  // nuber of elements in theta direction
+  sscanf(argv[2], "%d", &numEltheta);
   double r_range = 2.0;  // rmax - rmin
   double theta_range = M_PI/2.0;  // theta max - theta min
   double r_spacing = r_range/numElr;  // spacing of el radially
@@ -51,6 +67,7 @@ int main(int argc, char** argv)
   apf::changeMeshShape(m, linear2, true);
 */
 
+  std::cout << "numElr = " << numElr << std::endl;
   std::cout << "numEltheta = " << numEltheta << " theta_spacing = " << theta_spacing << std::endl;
 
 
@@ -124,7 +141,7 @@ int main(int argc, char** argv)
 
  // for quadratic meshes
 //  apf::FieldShape* linear2 = apf::getSerendipity();
-    apf::FieldShape* linear2 = apf::getSBPShape(2);
+    apf::FieldShape* linear2 = apf::getSBPShape(1);
 //  apf::FieldShape* linear2 = apf::getLagrange(2);
   apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
 
