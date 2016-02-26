@@ -13,6 +13,19 @@
 
 void checkMesh(apf::Mesh* m);
 
+
+// the program creates a cartesian mesh composed to triangles.
+// The mesh is created by subdividing each rectangle into two triangles
+// Arguments:
+//   1: number of rectangles in x direction
+//   2: number of rectangles in y direction
+//   3: whether or not to perturb the node locations
+//
+// Conventions:
+//   This mesh generator correctly classifies mesh entities onto geometric
+//   entities.  The geometric entities are number starting from 0 in the 
+//   bottom left corner, going counterclockwise.
+//     
 int main(int argc, char** argv)
 {
   MPI_Init(&argc,&argv);

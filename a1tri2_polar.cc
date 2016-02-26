@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <cmath>  // trig functions
-
+#include <stdbool.h>
 //#include "funcs1.h"
 #include "apfSBPShape.h"
 
@@ -16,6 +16,7 @@
 // all angles measured in radians
 // argv[1] = number of elements in r direction
 // argv[2] = number of elements in theta direction
+// See a1tri2 for description of geometric classification
 int main(int argc, char** argv)
 {
 
@@ -59,6 +60,11 @@ int main(int argc, char** argv)
   apf::MeshEntity* vertices_i[3];  // hold vertices for a particular element
   apf::Vector3 coords_i(0.0,0.0,0.0);  // hold coordinates of each point
 //  apf::FieldShape* linear2 = apf::getSBPQuadratic();
+  int model_dim = 0;  // the dimension of the model entity to classify
+                      // a newly created mesh entity on
+  int model_tag = 0; // the tag of the model entity
+
+  apf::ModelEntity* model_entity;  // the model entity itself
 
 /*
   // for linear meshes
@@ -82,8 +88,50 @@ int main(int argc, char** argv)
        double y_i = r_i*sin(theta_i);
        coords_i[0] = x_i;
        coords_i[1] = y_i;
-       
-       vertices[i][j] = m->createVert(0);
+ 
+       // figure out what model entity to classify this vertex on 
+       if ( i == 0 && j == 0 )
+       {
+         model_dim = 0;
+         model_tag = 0;
+       } else if ( i == (numElr) && j == 0 )
+       {
+         model_dim = 0;
+         model_tag = 1;
+       } else if ( i == (numElr) && j == (numEltheta) )
+       {
+         model_dim = 0;
+         model_tag = 2;
+       } else if ( i == 0 && j == (numEltheta) )
+       {
+         model_dim = 0;
+         model_tag = 3;
+       } else if ( j == 0)   // bottom row
+       {
+         model_dim = 1;
+         model_tag = 0;
+       } else if ( i == (numElr) )  // right column
+       {
+         model_dim = 1;
+         model_tag = 1;
+       } else if ( j == (numEltheta))  // top row
+       {
+         model_dim = 1;
+         model_tag = 2;
+       } else if ( i == 0 )  // left column
+       {
+         model_dim = 1;
+         model_tag = 3;
+
+       } else  // classify on face
+       {
+         model_dim = 2; 
+         model_tag = 0;
+       }
+
+       model_entity = m->findModelEntity(model_dim, model_tag);
+      
+       vertices[i][j] = m->createVert(model_entity);
        m->setPoint(vertices[i][j], 0, coords_i);
 //       theta_i = theta_i + theta_spacing;
        r_i = r_i + r_spacing;
@@ -93,6 +141,74 @@ int main(int argc, char** argv)
     r_i = r_0;  // reset x_i to beginning of row
 //    r_i = r_i + r_spacing;
   }  
+
+  // create the boundary mesh edges, classifying them correctly
+  int j = 0;  // row index (bottom to top)
+  int i = 0;  // column index (left to right)
+  model_dim = 1;
+  apf::Downward edge_verts;
+
+  // bottom row
+  std::cout << "Creating bottom row edges" << std::endl;
+  model_tag = 0;
+  model_entity = m->findModelEntity(model_dim, model_tag);
+  for ( i = 0; i < numElr; ++i)
+  {
+    edge_verts[0] = vertices[i][j];
+    edge_verts[1] = vertices[i + 1][j];
+
+    m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
+  }
+
+  // right column
+  std::cout << "Creating right column edges" << std::endl;
+  i = numElr;
+  model_tag = 1;
+  model_entity = m->findModelEntity(model_dim, model_tag);
+  for ( j = 0; j < numEltheta; ++j)
+  {
+    edge_verts[0] = vertices[i][j];
+    edge_verts[1] = vertices[i][j + 1];
+    m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
+  }
+
+  // top row
+  std::cout << "Creating top row edges" << std::endl;
+  j = numEltheta;
+  model_tag = 2;
+  model_entity = m->findModelEntity(model_dim, model_tag);
+  for ( i = 0; i < numElr; ++i)
+  {
+    edge_verts[1] = vertices[i][j];
+    edge_verts[0] = vertices[i + 1][j];
+    m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
+  }
+
+  // left column
+  std::cout << "Creating left column edges" << std::endl;
+  i = 0;
+  model_tag = 3;
+  model_entity = m->findModelEntity(model_dim, model_tag);
+  for ( j = 0; j < numEltheta; ++j)
+  {
+    edge_verts[1] = vertices[i][j];
+    edge_verts[0] = vertices[i][j + 1];
+    m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
+  }
+
+
+
+  // classify all MeshEntities on geometric face
+  model_dim = 2;
+  model_tag = 0;
+  model_entity = m->findModelEntity(model_dim, model_tag);
+  
+  // bools to control which edges get created
+  bool do_bottom = false;
+  bool do_diag = false;
+  bool do_left = false;
+  bool do_right = false;
+  bool do_top = false;
 
   // build element from verticies
   for (int j = 0; j < numEltheta; ++j)
@@ -110,12 +226,153 @@ int main(int argc, char** argv)
       std::cout << " , " << i + ((numElr+1)*(j+1)) << std::endl;
 //      std::cout << "assembled vertices" << std::endl;
 //
+      // create any edges that were not created before
+      std::cout << "creating edges for first triangle" << std::endl;
+       if ( i == 0 && j == 0 ) // bottom left
+       {
+         std::cout << "creating edges for bottom left corner" << std::endl;
+         do_diag = true;
+       } else if ( i == (numElr-1) && j == 0 ) // bottom right
+       {
+         std::cout << "creating edges for bottom right corner" << std::endl;
+         do_diag = true;
+       } else if ( i == (numElr-1) && j == (numEltheta-1) )  // top right
+       {
+
+         std::cout << "creating edges for top right corner" << std::endl;
+         do_diag = true;
+       } else if ( i == 0 && j == (numEltheta-1) )  // top left
+       {
+         std::cout << "creating edges for top left corner" << std::endl;
+         do_diag = true;
+       } else  // interior
+       {
+
+         std::cout << "creating interior mesh edges" << std::endl;
+         do_diag = true;
+       }
+
+       // actually create the vertices
+       if (do_bottom)
+       {
+         std::cout << "creating bottom edge" << std::endl;
+         edge_verts[0] = vertices_i[0];
+         edge_verts[1] = vertices_i[1];
+         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
+         m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
+       }
+       if (do_diag)
+       {
+         std::cout << "creating diagonal edge" << std::endl;
+         edge_verts[0] = vertices_i[1];
+         edge_verts[1] = vertices_i[2];
+         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
+         m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
+       }
+       if (do_left)
+       {
+         std::cout << "creating left edge" << std::endl;
+         edge_verts[0] = vertices_i[0];
+         edge_verts[1] = vertices_i[2];
+         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
+         m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
+       }
+
+
+      // reset flags
+      do_bottom = false;
+      do_diag = false;
+      do_left = false;
+      do_right = false;
+      do_top = false;
+
+
+
+
       // counterclockwise ordering
-      apf::buildElement(m, 0, apf::Mesh::TRIANGLE, vertices_i);
+      apf::buildElement(m, model_entity, apf::Mesh::TRIANGLE, vertices_i);
       vertices_i[0] = vertices[i+1][j];
      vertices_i[1] = vertices[i+1][j+1];
       vertices_i[2] = vertices[i][j+1];
-      apf::buildElement(m, 0, apf::Mesh::TRIANGLE, vertices_i);
+
+      std::cout << "Creating edges for second triangle" << std::endl;
+      if ( i == 0 && j == 0 ) // bottom left
+       {
+         std::cout << "creating edges for bottom left corner" << std::endl;
+         do_right = true;
+         do_top = true;
+
+       } else if ( i == (numElr-1) && j == 0 )  // bottom right
+       {
+         std::cout << "creating edges for bottom right corner" << std::endl;
+         do_top = true;
+
+       } else if ( i == (numElr-1) && j == (numEltheta-1) ) // top right
+       {
+
+         std::cout << "creating edges for top right corner" << std::endl;
+         // do nothing
+
+       } else if ( i == 0 && j == (numEltheta-1) )  // top left
+       {
+         std::cout << "creating edges for top left corner" << std::endl;
+         do_right = true;
+
+       } else if ( j == 0)   // bottom row
+       {
+         std::cout << "creating edges for bottom row" << std::endl;
+         do_right = true;
+         do_top = true;
+
+       } else if ( i == (numElr-1) )  // right column
+       {
+         std::cout << "creating edges for right column" << std::endl;
+         do_top = true;
+
+       } else if ( j == (numEltheta-1))  // top row
+       {
+         std::cout << "creating edges for top row" << std::endl;
+         do_right = true;
+
+       } else if ( i == 0 )  // left column
+       {
+         std::cout << "creating edges for left column" << std::endl;
+         do_right = true;
+         do_top = true;
+
+       } else  // do both
+       {
+         std::cout << "creating interior mesh edges" << std::endl;
+         do_right = true;
+         do_top = true;
+       }
+
+       if (do_right)
+       {
+         std::cout << "creating right edge" << std::endl;
+         edge_verts[0] = vertices_i[0];
+         edge_verts[1] = vertices_i[1];
+         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
+         m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
+       }
+       if (do_top)
+       {
+         std::cout << "creating top edge" << std::endl;
+         edge_verts[0] = vertices_i[1];
+         edge_verts[1] = vertices_i[2];
+         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
+         m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
+       }
+
+      // reset flags
+      do_bottom = false;
+      do_diag = false;
+      do_left = false;
+      do_right = false;
+      do_top = false;
+
+
+      apf::buildElement(m, model_entity, apf::Mesh::TRIANGLE, vertices_i);
 
 /*
       vertices_i[1] = vertices[i][[j+1];
@@ -131,9 +388,11 @@ int main(int argc, char** argv)
   m->init(linear2);
 */
   // build, verify  mesh
+/*
   std::cout << "deriving model" << std::endl;
   apf::deriveMdsModel(m);
   std::cout << "finished deriving model" << std::endl;
+*/
   m->acceptChanges();
   std::cout << "accepted changes" << std::endl;
   m->verify();
