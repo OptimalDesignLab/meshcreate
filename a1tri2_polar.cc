@@ -296,16 +296,43 @@ int main(int argc, char** argv)
       vertices_i[2] = vertices[i][j+1];
 
       std::cout << "Creating edges for second triangle" << std::endl;
-      if ( i == 0 && j == 0 ) // bottom left
+      if ( i == 0 && j == 0 && (numElr > 1 && numEltheta > 1) ) // bottom left
        {
          std::cout << "creating edges for bottom left corner" << std::endl;
          do_right = true;
          do_top = true;
+       // bottom left, 1 element in Y
+       } else if (i == 0 && j == 0 && (numElr > 1 && numEltheta == 1) )
+       {
+         
+         std::cout << "creating edges for bottom left corner with 1 element";
+         std::cout << " in y direction" << std::endl;
+         do_right = true;
+       // bottom left, 1 element in X
+       } else if ( i == 0 && j == 0 && (numElr == 1 && numEltheta > 1) )
+       {
+         std::cout << "creating edges for bottom left corner with 1 element";
+         std::cout << " in x direction" << std::endl;
+         do_top = true;
+       // bottom left, 1 element in X and Y
+       } else if ( i == 0 && j == 0 && (numElr == 1 && numEltheta == 1) )
+       {
 
-       } else if ( i == (numElr-1) && j == 0 )  // bottom right
+         std::cout << "creating edges for bottom left corner with 1 element";
+         std::cout << " in x and y  direction" << std::endl;
+
+
+       } else if ( i == (numElr-1) && j == 0 && numEltheta > 1 )  // bottom right
        {
          std::cout << "creating edges for bottom right corner" << std::endl;
          do_top = true;
+
+       } else if ( i == (numElr-1) && j == 0 && numEltheta == 1)
+       {
+         std::cout << "creating edges for bottom right corner with 1 element";
+         std::cout << " in the y direction" << std::endl;
+
+
 
        } else if ( i == (numElr-1) && j == (numEltheta-1) ) // top right
        {
