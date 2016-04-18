@@ -94,7 +94,7 @@ int main(int argc, char** argv)
   {
     for (int i = 0; i < (numElx+1); ++i) // loop over rows (left to right)
     {
-       std::cout << "creating point at x = " << x_inner << " , y = " << y_inner << std::endl;
+//       std::cout << "creating point at x = " << x_inner << " , y = " << y_inner << std::endl;
        coords_i[0] = x_inner;
        coords_i[1] = y_inner;
       
@@ -160,58 +160,58 @@ int main(int argc, char** argv)
   apf::Downward edge_verts;
 
   // bottom row
-  std::cout << "Creating bottom row edges" << std::endl;
+//  std::cout << "Creating bottom row edges" << std::endl;
   model_tag = 0;
   model_entity = m->findModelEntity(model_dim, model_tag);
   for ( i = 0; i < numElx; ++i)
   {
-    std::cout << " creating edge at i = " << i << " j = " << j << std::endl;
+//    std::cout << " creating edge at i = " << i << " j = " << j << std::endl;
     edge_verts[0] = vertices[i][j];
     edge_verts[1] = vertices[i + 1][j];
 
-    std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
+//    std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
     m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
   }
 
   // right column
-  std::cout << "Creating right column edges" << std::endl;
+//  std::cout << "Creating right column edges" << std::endl;
   i = numElx;
   model_tag = 1;
   model_entity = m->findModelEntity(model_dim, model_tag);
   for ( j = 0; j < numEly; ++j)
   {
-    std::cout << " creating edge at i = " << i << " j = " << j << std::endl;
+//    std::cout << " creating edge at i = " << i << " j = " << j << std::endl;
     edge_verts[0] = vertices[i][j];
     edge_verts[1] = vertices[i][j + 1];
-    std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
+//    std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
     m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
   }
 
   // top row
-  std::cout << "Creating top row edges" << std::endl;
+//  std::cout << "Creating top row edges" << std::endl;
   j = numEly;
   model_tag = 2;
   model_entity = m->findModelEntity(model_dim, model_tag);
   for ( i = 0; i < numElx; ++i)
   {
-    std::cout << " creating edge at i = " << i << " j = " << j << std::endl;
+//    std::cout << " creating edge at i = " << i << " j = " << j << std::endl;
     edge_verts[1] = vertices[i][j];
     edge_verts[0] = vertices[i + 1][j];
-    std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
+//    std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
     m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
   }
 
   // left column
-  std::cout << "Creating left column edges" << std::endl;
+//  std::cout << "Creating left column edges" << std::endl;
   i = 0;
   model_tag = 3;
   model_entity = m->findModelEntity(model_dim, model_tag);
   for ( j = 0; j < numEly; ++j)
   {
-    std::cout << " creating edge at i = " << i << " j = " << j << std::endl;
+//    std::cout << " creating edge at i = " << i << " j = " << j << std::endl;
     edge_verts[1] = vertices[i][j];
     edge_verts[0] = vertices[i][j + 1];
-    std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
+//    std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
     m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
   }
 
@@ -232,7 +232,7 @@ int main(int argc, char** argv)
   {
     for (int i = 0; i < numElx; ++i)
     {
-      std::cout << "\ncreating element " << i << ", " << j << std::endl;
+//      std::cout << "\ncreating element " << i << ", " << j << std::endl;
 //      int el_num = i + numElx*j;
 //      std::cout << "creating element i = " << i << " , j = " << j << std::endl;
       // get correct vertices
@@ -245,54 +245,53 @@ int main(int argc, char** argv)
 //      std::cout << "assembled vertices" << std::endl;
 
       // create any edges that were not created before
-      std::cout << "creating edges for first triangle" << std::endl;
+//      std::cout << "creating edges for first triangle" << std::endl;
        if ( i == 0 && j == 0 ) // bottom left
        {
-         std::cout << "creating edges for bottom left corner" << std::endl;
+//         std::cout << "creating edges for bottom left corner" << std::endl;
          do_diag = true;
        } else if ( i == (numElx-1) && j == 0 ) // bottom right many elements
        {
-         std::cout << "creating edges for bottom right corner" << std::endl;
+//         std::cout << "creating edges for bottom right corner" << std::endl;
          do_diag = true;
        } else if ( i == (numElx-1) && j == (numEly-1) )  // top right
        {
-
-         std::cout << "creating edges for top right corner" << std::endl;
+//         std::cout << "creating edges for top right corner" << std::endl;
          do_diag = true;
        } else if ( i == 0 && j == (numEly-1) )  // top left
        {
-         std::cout << "creating edges for top left corner" << std::endl;
+//         std::cout << "creating edges for top left corner" << std::endl;
          do_diag = true;
        } else  // interior
        {
 
-         std::cout << "creating interior mesh edges" << std::endl;
+//         std::cout << "creating interior mesh edges" << std::endl;
          do_diag = true;
        }
 
        // actually create the vertices
        if (do_bottom)
        {
-         std::cout << "creating bottom edge" << std::endl;
+//         std::cout << "creating bottom edge" << std::endl;
          edge_verts[0] = vertices_i[0];
          edge_verts[1] = vertices_i[1];
-         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
+//         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
          m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
        }
        if (do_diag)
        {
-         std::cout << "creating diagonal edge" << std::endl;
+//         std::cout << "creating diagonal edge" << std::endl;
          edge_verts[0] = vertices_i[1];
          edge_verts[1] = vertices_i[2];
-         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
+//         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
          m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
        }
        if (do_left)
        {
-         std::cout << "creating left edge" << std::endl;
+//         std::cout << "creating left edge" << std::endl;
          edge_verts[0] = vertices_i[0];
          edge_verts[1] = vertices_i[2];
-         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
+//         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
          m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
        }
 
@@ -307,7 +306,7 @@ int main(int argc, char** argv)
 
 
       // counterclockwise ordering
-      std::cout << "about to create first triangle" << std::endl;
+//      std::cout << "about to create first triangle" << std::endl;
       apf::buildElement(m, model_entity, apf::Mesh::TRIANGLE, vertices_i);
 //      m->createEntity(apf::Mesh::TRIANGLE, model_entity, vertices_i);
 
@@ -315,105 +314,101 @@ int main(int argc, char** argv)
       vertices_i[0] = vertices[i+1][j];
       vertices_i[1] = vertices[i+1][j+1];
       vertices_i[2] = vertices[i][j+1];
-
+/*
       std::cout << "numElx = " << numElx << std::endl;
       std::cout << "numEly = " << numEly << std::endl;
       std::cout << "i = " << i << std::endl;
       std::cout << "j = " << j << std::endl;
       std::cout << "Creating edges for second triangle" << std::endl;
+*/
       // bottom left, many elements
       if ( i == 0 && j == 0 && (numElx > 1 && numEly > 1) ) 
        {
+/*
          std::cout << " i = " << i << ", j = " << j << ", numElx = " << numElx;
          std::cout << " numEly = " << numEly << std::endl;
          std::cout << "creating edges for bottom left corner" << std::endl;
+*/
          do_right = true;
          do_top = true;
        // bottom left, 1 element in Y
        } else if (i == 0 && j == 0 && (numElx > 1 && numEly == 1) )
-       {
-         
-         std::cout << "creating edges for bottom left corner with 1 element";
-         std::cout << " in y direction" << std::endl;
+       {         
+//         std::cout << "creating edges for bottom left corner with 1 element";
+//         std::cout << " in y direction" << std::endl;
          do_right = true;
        // bottom left, 1 element in X
        } else if ( i == 0 && j == 0 && (numElx == 1 && numEly > 1) )
        {
-         std::cout << "creating edges for bottom left corner with 1 element";
-         std::cout << " in x direction" << std::endl;
+//         std::cout << "creating edges for bottom left corner with 1 element";
+//         std::cout << " in x direction" << std::endl;
          do_top = true;
        // bottom left, 1 element in X and Y
        } else if ( i == 0 && j == 0 && (numElx == 1 && numEly == 1) )
        {
-
-         std::cout << "creating edges for bottom left corner with 1 element";
-         std::cout << " in x and y  direction" << std::endl;
-
+//         std::cout << "creating edges for bottom left corner with 1 element";
+//         std::cout << " in x and y  direction" << std::endl;
        } else if ( i == (numElx-1) && j == 0 && numEly > 1 )  // bottom right
        {
-         std::cout << "creating edges for bottom right corner" << std::endl;
+//         std::cout << "creating edges for bottom right corner" << std::endl;
          do_top = true;
 
        } else if ( i == (numElx-1) && j == 0 && numEly == 1)
        {
-         std::cout << "creating edges for bottom right corner with 1 element";
-         std::cout << " in the y direction" << std::endl;
-
-
+//         std::cout << "creating edges for bottom right corner with 1 element";
+//         std::cout << " in the y direction" << std::endl;
        } else if ( i == (numElx-1) && j == (numEly-1) ) // top right
        {
-
-         std::cout << "creating edges for top right corner" << std::endl;
+//         std::cout << "creating edges for top right corner" << std::endl;
          // do nothing
 
        } else if ( i == 0 && j == (numEly-1) )  // top left
        {
-         std::cout << "creating edges for top left corner" << std::endl;
+//         std::cout << "creating edges for top left corner" << std::endl;
          do_right = true;
 
        } else if ( j == 0)   // bottom row
        {
-         std::cout << "creating edges for bottom row" << std::endl;
+//         std::cout << "creating edges for bottom row" << std::endl;
          do_right = true;
          do_top = true;
 
        } else if ( i == (numElx-1) )  // right column
        {
-         std::cout << "creating edges for right column" << std::endl;
+//         std::cout << "creating edges for right column" << std::endl;
          do_top = true;
-
        } else if ( j == (numEly-1))  // top row
        {
-         std::cout << "creating edges for top row" << std::endl;
+//         std::cout << "creating edges for top row" << std::endl;
          do_right = true;
 
        } else if ( i == 0 )  // left column
        {
-         std::cout << "creating edges for left column" << std::endl;
+//         std::cout << "creating edges for left column" << std::endl;
          do_right = true;
          do_top = true;
 
        } else  // do both
        {
-         std::cout << "creating interior mesh edges" << std::endl;
+//         std::cout << "creating interior mesh edges" << std::endl;
          do_right = true;
          do_top = true;
        }
 
        if (do_right)
        {
-         std::cout << "creating right edge" << std::endl;
+//         std::cout << "creating right edge" << std::endl;
          edge_verts[0] = vertices_i[0];
          edge_verts[1] = vertices_i[1];
-         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
+//         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
          m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
        }
        if (do_top)
        {
-         std::cout << "creating top edge" << std::endl;
+//         std::cout << "creating top edge" << std::endl;
          edge_verts[0] = vertices_i[1];
          edge_verts[1] = vertices_i[2];
-         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
+//         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
          m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
        }
 
@@ -426,7 +421,7 @@ int main(int argc, char** argv)
 
 
 
-       std::cout << "about to create second triangle" << std::endl;
+//       std::cout << "about to create second triangle" << std::endl;
 //      m->createEntity(apf::Mesh::TRIANGLE, model_entity, vertices_i);
       apf::buildElement(m, model_entity, apf::Mesh::TRIANGLE, vertices_i);
 
@@ -532,7 +527,7 @@ void checkMesh(apf::Mesh* m)
       std::cerr << "vertex " << cnt << " has too few edges" << std::endl;
     } else
     {
-      std::cout << "vertex -> edge pass " << std::endl;
+//      std::cout << "vertex -> edge pass " << std::endl;
     }
 
     // check vert -> face
@@ -542,7 +537,7 @@ void checkMesh(apf::Mesh* m)
       std::cerr << "vertex " << cnt << " has too many faces" << std::endl;
     } else
     {
-      std::cout << "vertex -> face pass " << std::endl;
+//      std::cout << "vertex -> face pass " << std::endl;
     }
 
     ++cnt;
@@ -560,7 +555,7 @@ void checkMesh(apf::Mesh* m)
       std::cerr << "edge " << cnt << " has too few verts" << std::endl;
     } else
     {
-      std::cout << "edge -> vert pass" << std::endl;
+//      std::cout << "edge -> vert pass" << std::endl;
     }
 
     // check edge -> face
@@ -570,7 +565,7 @@ void checkMesh(apf::Mesh* m)
       std::cerr << "edge " << cnt << " has too many faces" << std::endl;
     } else
     {
-      std::cout << "edge -> face pass" << std::endl;
+//      std::cout << "edge -> face pass" << std::endl;
     }
 
     ++cnt;
@@ -589,7 +584,7 @@ void checkMesh(apf::Mesh* m)
       std::cerr << "face " << cnt << " has incorrect number of edges" << std::endl;
     } else
     {
-      std::cout << "face -> edge pass" << std::endl;
+//      std::cout << "face -> edge pass" << std::endl;
     }
 
     // check face -> verts
@@ -599,7 +594,7 @@ void checkMesh(apf::Mesh* m)
       std::cerr << "face " << cnt << " has incorrect number of vertices" << std::endl;
     } else
     {
-      std::cout << "face -> vert pass" << std::endl;
+//      std::cout << "face -> vert pass" << std::endl;
     }
 
     ++cnt;
