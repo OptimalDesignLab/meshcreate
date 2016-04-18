@@ -9,6 +9,7 @@
 #include <iostream>
 #include <cmath>  // trig functions
 #include <stdbool.h>
+#include <limits.h>
 //#include "funcs1.h"
 #include "apfSBPShape.h"
 
@@ -48,16 +49,35 @@ int main(int argc, char** argv)
   int numEltheta = 0;  // nuber of elements in theta direction
   sscanf(argv[2], "%d", &numEltheta);
 
-  int nvert = (numElr+1)*(numEltheta+1);
-  int nedges = numElr*(numEltheta+1) + numEltheta*(numElr+1) + numElr*numEltheta;
-  int nel = numElr*numEltheta + 1;
+  long numElr_l = numElr;
+  long numEltheta_l = numEltheta;
+  long nvert = (numElr_l+1)*(numEltheta_l+1);
+  long nedges = numElr_l*(numEltheta_l+1) + numEltheta_l*(numElr_l+1) + numElr_l*numEltheta_l;
+  long nel = numElr_l*numEltheta_l + 1;
 
   std::cout << "expected entity counts: " << std::endl;
   std::cout << "  Vertices: " << nvert << std::endl;
   std::cout << "  Edges: " << nedges << std::endl;
   std::cout << "  Elements: " << nel << std::endl;
 
- 
+   if (nvert > INT_MAX)
+  {
+    std::cerr << "Error: number of vertices will overflow 32-bit integer" << std::endl;
+    return 1;
+  }
+
+  if (nedges > INT_MAX)
+  {
+    std::cerr << "Error: number of edges will overflow 32-bit integer" << std::endl;
+    return 1;
+  }
+  if (nel > INT_MAX)
+  {
+    std::cerr << "Error: number of elements will overflow 32-bit integer" << std::endl;
+    return 1;
+  }
+
+
   double r_range = 2.0;  // rmax - rmin
   double theta_range = M_PI/2.0;  // theta max - theta min
   double r_spacing = r_range/numElr;  // spacing of el radially

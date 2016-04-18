@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <stdbool.h>
+#include <limits.h>
 //#include "funcs1.h"
 #include "apfSBPShape.h"
 
@@ -55,15 +56,35 @@ int main(int argc, char** argv)
     sscanf(argv[3], "%d", &apply_pert);
   }
   
-
-  int nvert = (numElx+1)*(numEly+1);
-  int nedges = numElx*(numEly+1) + numEly*(numElx+1) + numElx*numEly;
-  int nel = numElx*numEly + 1;
+  long numElx_l = numElx;
+  long numEly_l = numEly;
+  long nvert = (numElx_l+1)*(numEly_l+1);
+  long nedges = numElx_l*(numEly_l+1) + numEly_l*(numElx_l+1) + numElx_l*numEly_l;
+  long nel = numElx_l*numEly_l + 1;
 
   std::cout << "expected entity counts: " << std::endl;
   std::cout << "  Vertices: " << nvert << std::endl;
   std::cout << "  Edges: " << nedges << std::endl;
   std::cout << "  Elements: " << nel << std::endl;
+
+  if (nvert > INT_MAX)
+  {
+    std::cerr << "Error: number of vertices will overflow 32-bit integer" << std::endl;
+    return 1;
+  }
+
+  if (nedges > INT_MAX)
+  {
+    std::cerr << "Error: number of edges will overflow 32-bit integer" << std::endl;
+    return 1;
+  }
+  if (nel > INT_MAX)
+  {
+    std::cerr << "Error: number of elements will overflow 32-bit integer" << std::endl;
+    return 1;
+  }
+
+
 
   double xmin = 1.0;
   double ymin = 1.0;
