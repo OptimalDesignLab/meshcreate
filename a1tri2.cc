@@ -56,6 +56,15 @@ int main(int argc, char** argv)
   }
   
 
+  int nvert = (numElx+1)*(numEly+1);
+  int nedges = numElx*(numEly+1) + numEly*(numElx+1) + numElx*numEly;
+  int nel = numElx*numEly + 1;
+
+  std::cout << "expected entity counts: " << std::endl;
+  std::cout << "  Vertices: " << nvert << std::endl;
+  std::cout << "  Edges: " << nedges << std::endl;
+  std::cout << "  Elements: " << nel << std::endl;
+
   double xmin = 1.0;
   double ymin = 1.0;
   double xdist = 2;  // xmax - xmin
@@ -70,7 +79,16 @@ int main(int argc, char** argv)
   double y_inner = y_i;
   double pert_fac = 10*M_PI;
   double pert_mag = 0.1;
-  apf::MeshEntity* vertices[numElx+1][numEly+1];  // hold pointers to all vertices
+
+  std::cout << "SIZE_MAX = " << SIZE_MAX << std::endl;
+  std::cout << "about to allocate memory" << std::endl;
+  apf::MeshEntity*** vertices = (apf::MeshEntity***) calloc(numElx+1, sizeof(apf::MeshEntity**));
+  for (int i = 0; i < (numElx+1); ++i)
+  {
+    vertices[i] = (apf::MeshEntity**) calloc(numEly+1, sizeof(apf::MeshEntity*));
+  }
+//  apf::MeshEntity* vertices[numElx+1][numEly+1];  // hold pointers to all vertices
+  std::cout << "finished allocating memory" << std::endl;
   apf::MeshEntity* vertices_i[3];  // hold vertices for a particular element
   apf::Vector3 coords_i(0.0,0.0,0.0);  // hold coordinates of each point
   int model_dim = 0;  // the dimension of the model entity to classify
