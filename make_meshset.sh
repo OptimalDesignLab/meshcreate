@@ -1,14 +1,17 @@
 #!/bin/bash
 
 # make a set of parallel meshes
+# the output file name is of the form:
+# "$name_prefix"_$idx_$nproc
+# where "$name_prefix", $idx, and $nproc are defined below
+
 # variable to determine the number of elements
-first=10
-inc=1
-last=30
-nproc=1
-name_prefix="square4"
-# control perturbation of mesh points
-perturb=0
+first=10  # number of elements in each direction in the first mesh
+inc=1  # increment for the number of elements
+last=30  # number of elements in the last mesh
+nproc=1  # number of processors to partition the mesh into
+name_prefix="square4"  # the file name prefix
+perturb=0  # control perturbation of mesh points
 echo "perturb = $perturb"
 
 # current mesh index

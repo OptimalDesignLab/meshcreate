@@ -1,9 +1,9 @@
 #!/bin/bash
 # variable to determine the number of elements
-first=12
+first=4
 inc=1
-last=32
-
+last=10
+name_prefix="square3"
 # control perturbation of mesh points
 perturb=0
 echo "perturb = $perturb"
@@ -16,7 +16,7 @@ do
 	echo "numel = $i"
 #        ./a1tri2_polar $i $i
 	./a1tri2 $i $i $perturb
-	cp -v ./meshfiles/0.smb ~/pdesolver/mesh_files/square3_"$idx"0.smb
+	cp -v ./meshfiles/abc0.smb ./meshfiles/"$name_prefix"_"$idx"0.smb
 
         idx=$(expr $idx + 1)
 done
