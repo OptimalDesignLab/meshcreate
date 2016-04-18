@@ -496,7 +496,7 @@ int main(int argc, char** argv)
 */
   // write output and clean up
   apf::writeVtkFiles("outTri", m);
-  m->writeNative("./meshfiles/");
+  m->writeNative("./meshfiles/abc.smb");
 /*
   apf::MeshIterator* it = m->begin(2);
   apf::MeshEntity* e = m->iterate(it);

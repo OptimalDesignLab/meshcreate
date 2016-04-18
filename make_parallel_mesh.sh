@@ -5,6 +5,7 @@
 # $3 perturb or not
 # $4 name of output mesh
 # $5 number of parts to partition into
+
 ./a1tri2 $1 $2 $3
 ./make_dmg.sh
 ./split.sh $5 $4

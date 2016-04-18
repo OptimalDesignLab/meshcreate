@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # $1 = number of parts to partition the mesh into
-# $2 = name of output file (no extension
+# $2 = name of output file (no extension)
 start_dir=`pwd`
 
 if [ "$#" -le 0 ]; then
