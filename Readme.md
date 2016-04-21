@@ -32,8 +32,8 @@ for Pumi.
   into.  Pumi will create a both a `$4.dmg` file and a set of `"$4""$rank".smb`
   files, where `rank` is the mpi rank that will load the mesh file.
   Note that these scripts require the `mkmodel`, `zsplit`, and `verify` 
-  programs to be found via the `$PATH` variable.  They are not (currently) 
-  part of the non-Scorec installations of Pumi.
+  programs to be found via the `$PATH` variable.  They are included with both
+  the Scorec installation of Pumi and the local build of PumiInterface.
 
 ### Making Sets of Meshes
   Two additional scripts exist for making sets of mesh with increasing numbers
