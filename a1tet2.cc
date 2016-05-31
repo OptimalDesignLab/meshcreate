@@ -28,9 +28,9 @@ int main(int argc, char** argv)
   // the subdivions is the sameon used for Marching Tetrahedra
   // projected onto the xyz planes, you get two triangles in x and y
   // and one in z
-  int numElx = 2;
-  int numEly = 2; 
-  int numElz = 2;
+  int numElx = 1;
+  int numEly = 1; 
+  int numElz = 1;
   double xrange = 2.0;
   double yrange = 2.0;
   double zrange = 2.0;
@@ -185,9 +185,9 @@ int main(int argc, char** argv)
   std::cout << "verified" << std::endl;
 
  // for quadratic meshes
-   int order = 3;
+   int order = 1;
 //  apf::FieldShape* linear2 = apf::getSerendipity();
-  apf::FieldShape* linear2 = apf::getSBP3Shape(4);
+  apf::FieldShape* linear2 = apf::getSBP3Shape(1);
 //  apf::FieldShape* linear2 = apf::getLagrange(2);
   apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
 

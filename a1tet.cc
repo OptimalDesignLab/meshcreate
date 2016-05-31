@@ -20,54 +20,52 @@ struct _Sizes {
 typedef struct _Sizes Sizes;
 
 struct _Geom {
-  int model_entity;
+  int model_tag;
   int model_dim;
-}
+};
 typedef struct _Geom Geom;
 
 #define NTETS 6
 #define NEDGES 19
 #define NFACES 18
-const int tets[NTETS][4][3];  // define vertices used for constructing tetrahedrons
-tets[0][0] = {0, 0, 0};
-tets[0][1] = {1, 0, 0};
-tets[0][2] = {1, 1, 0};
-tets[0][3] = {1, 0, 1};
+int tets[NTETS][4][3];  // define vertices used for constructing tetrahedrons
 
-tets[1][0] = {1, 1, 1};
-tets[1][1] = {0, 0, 0};
-tets[1][2] = {1, 0, 1};
-tets[1][3] = {0, 0, 1};
-
-tets[2][0] = {0, 0, 0};
-tets[2][1] = {1, 0, 0};
-tets[2][2] = {1, 1, 0};
-tets[2][3] = {1, 1, 1};
-
-tets[3][0] = {0, 1, 0};
-tets[3][1] = {0, 0, 0};
-tets[3][2] = {1, 1, 0};
-tets[3][3] = {1, 1, 1};
-
-tets[4][0] = {0, 1, 0};
-tets[4][1] = {0, 0, 0};
-tets[4][2] = {1, 1, 1};
-tets[4][3] = {0, 1, 1};
-
-tets[5][0] = {0, 0, 0};
-tets[5][1] = {1, 1, 1};
-tets[5][2] = {0, 1, 1};
-tets[5][3] = {0, 0, 1};
-
-//
-int edges[NEDGES][2][3];
-int faces[NFACES][3];
+int edges[NEDGES][2][3];  // describe vertices defining each edge of the tets
+int faces[NFACES][3][3];  // describe the vertices defining each face of hte tets
 
 
+// declare the verts used to break the cube into tetrahedra
+void declareTets();
 
+// get the classification of vertices at indices (i, j, k) in the array of vertices
+Geom getVertClassification(int i, int j, int k, Sizes sizes);
 
+// populate the global variable edges by inspecting tets
+void extractEdges();
 
+// determine if the edge defined by the two vertices is already in the edges list
+bool checkEdges(int vert1[3], int vert2[3], int nedges);
 
+// determine if the face defined by the 3 vertices is already in the faces list
+bool checkFace(int vert1[3], int vert2[3], int vert3[3], int nfaces);
+
+// check of an entry in either edges or faces contains the vertex
+bool contains(int list_entry[][3], const int dim1, int vert1[3]);
+
+// populate the faces global variable by inspecting the tets variable
+void extractFaces();
+
+// copy array of length 3
+void copyArray(int src[3], int dest[3]);
+
+// print array to stdout
+void printArray(int vals[3]);
+
+// print edges array
+void printEdges(int nedges);
+
+// translate binary offsets into integer
+int getVertNum(int vert[3]);
 
 void checkMesh(apf::Mesh* m);
 
@@ -90,7 +88,7 @@ int main(int argc, char** argv)
   PCU_Comm_Init();
   gmi_register_null();
   gmi_model* g = gmi_load(".null");
-  apf::Mesh2* m = apf::makeEmptyMdsMesh(g, 2, false);
+  apf::Mesh2* m = apf::makeEmptyMdsMesh(g, 3, false);
 /*
   apf::FieldShape* m_shape = m->getShape();
   const char shape_name[] = m_shape->getName();
@@ -114,7 +112,13 @@ int main(int argc, char** argv)
   {
     sscanf(argv[4], "%d", &apply_pert);
   }
- 
+  Sizes sizes = {numElx, numEly, numElz};
+  declareTets();
+  extractEdges();
+  extractFaces();
+
+  return 0;
+
   // TODO: fix this 
   long numElx_l = numElx;
   long numEly_l = numEly;
@@ -144,8 +148,6 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  Sizes globalsize = {numElx, numEly, numElz};
-
   double xmin = 1.0;
   double ymin = 1.0;
   double zmin = 1.0;
@@ -171,7 +173,7 @@ int main(int argc, char** argv)
 
   std::cout << "SIZE_MAX = " << SIZE_MAX << std::endl;
   std::cout << "about to allocate memory" << std::endl;
-  apf::MeshEntity*** vertices = (apf::MeshEntity****) calloc(numElx+1, sizeof(apf::MeshEntity***));
+  apf::MeshEntity**** vertices = (apf::MeshEntity****) calloc(numElx+1, sizeof(apf::MeshEntity***));
   for (int i = 0; i < (numElx+1); ++i)
   {
     vertices[i] = (apf::MeshEntity***) calloc(numEly+1, sizeof(apf::MeshEntity**));
@@ -184,11 +186,7 @@ int main(int argc, char** argv)
 //  apf::MeshEntity* vertices[numElx+1][numEly+1];  // hold pointers to all vertices
   std::cout << "finished allocating memory" << std::endl;
   apf::Vector3 coords_i(0.0,0.0,0.0);  // hold coordinates of each point
-  Goem geo_classification = {0, 0};
-  Goem geo;
-  int model_dim = 0;  // the dimension of the model entity to classify
-                      // a newly created mesh entity on
-  int model_tag = 0; // the tag of the model entity
+  Geom geo;
   
   apf::ModelEntity* model_entity;  // the model entity itself
 
@@ -211,7 +209,7 @@ int main(int argc, char** argv)
          model_entity = m->findModelEntity(geo.model_dim, geo.model_tag);
            
          vertices[i][j][k] = m->createVert(model_entity);
-         m->setPoint(vertices[i][j], 0, coords_i);
+         m->setPoint(vertices[i][j][k], 0, coords_i);
          x_inner = x_inner + x_spacing + pert_mag*sin(apply_pert*pert_fac*x_inner);
          y_inner = y_i + pert_mag*sin(apply_pert*pert_fac*x_inner);
          z_inner = z_i + pert_mag*sin(apply_pert*pert_fac*y_inner);
@@ -224,7 +222,7 @@ int main(int argc, char** argv)
       x_inner = x_i; // + pert_mag*sin(apply_pert*pert_fac*x_i);
       z_inner = z_i;
     }
-    z_i = z_i = z_space;
+    z_i = z_i + z_spacing;
     x_i = x_0;  // reset to beginning of row
     y_i = y_0; // reset to beginning of row
 
@@ -233,7 +231,7 @@ int main(int argc, char** argv)
     z_inner = z_i;
 
   }
-
+/*
   // create the boundary mesh edges, classifying them correctly
   int j = 0;  // row index (bottom to top)
   int i = 0;  // column index (left to right)
@@ -395,22 +393,11 @@ int main(int argc, char** argv)
       // do other half of rectangle
       vertices_i[0] = vertices[i+1][j];
       vertices_i[1] = vertices[i+1][j+1];
-      vertices_i[2] = vertices[i][j+1];
-/*
-      std::cout << "numElx = " << numElx << std::endl;
-      std::cout << "numEly = " << numEly << std::endl;
-      std::cout << "i = " << i << std::endl;
-      std::cout << "j = " << j << std::endl;
-      std::cout << "Creating edges for second triangle" << std::endl;
-*/
+      vertices_i[2] = vertices[i][j+1];a
+
       // bottom left, many elements
       if ( i == 0 && j == 0 && (numElx > 1 && numEly > 1) ) 
        {
-/*
-         std::cout << " i = " << i << ", j = " << j << ", numElx = " << numElx;
-         std::cout << " numEly = " << numEly << std::endl;
-         std::cout << "creating edges for bottom left corner" << std::endl;
-*/
          do_right = true;
          do_top = true;
        // bottom left, 1 element in Y
@@ -507,18 +494,8 @@ int main(int argc, char** argv)
 //      m->createEntity(apf::Mesh::TRIANGLE, model_entity, vertices_i);
       apf::buildElement(m, model_entity, apf::Mesh::TRIANGLE, vertices_i);
 
-/*
-      vertices_i[1] = vertices[i][[j+1];
-      apf::buildElement(m, 0, apf::Mesh::TRIANGLE, vertices_i);
-*/
      }
   }
-/*
-//  apf::FieldShape* linear2 = apf::getSBPQuadratic();
-    apf::FieldShape* linear2 = apf::getLagrange(1);
-//  const char shape_name[] = linear2->getName();
-  std::cout << "shape name = " << linear2->getName() << std::endl;
-  m->init(linear2);
 */
   // build, verify  mesh
 /*
@@ -685,7 +662,44 @@ void checkMesh(apf::Mesh* m)
 
 } // end function
 
-Geom getVertClassification(int i; int j; int k, Sizes sizes)
+
+void declareTets()
+{
+  int vals[] = {0, 0, 0}; copyArray(vals, tets[0][0]);
+  int vals2[] = {1, 0, 0}; copyArray(vals2, tets[0][1]);
+  int vals3[] = {1, 1, 1}; copyArray(vals3, tets[0][2]);
+  int vals4[] = {1, 0, 1}; copyArray(vals4, tets[0][3]);
+
+  int vals5[] = {1, 1, 1}; copyArray(vals5, tets[1][0]);
+  int vals6[] = {0, 0, 0}; copyArray(vals6, tets[1][1]);
+  int vals7[] = {1, 0, 1}; copyArray(vals7, tets[1][2]);
+  int vals8[] = {0, 0, 1}; copyArray(vals8, tets[1][3]);
+
+  int vals9[] = {0, 0, 0}; copyArray(vals9, tets[2][0]);
+  int vals10[] = {1, 0, 0}; copyArray(vals10, tets[2][1]);
+  int vals11[] = {1, 1, 0}; copyArray(vals11, tets[2][2]);
+  int vals12[] = {1, 1, 1}; copyArray(vals12, tets[2][3]);
+
+  int vals13[] = {0, 1, 0}; copyArray(vals13, tets[3][0]);
+  int vals14[] = {0, 0, 0}; copyArray(vals14, tets[3][1]);
+  int vals15[] = {1, 1, 0}; copyArray(vals15, tets[3][2]);
+  int vals16[] = {1, 1, 1}; copyArray(vals16, tets[3][3]);
+
+  int vals17[] = {0, 1, 0}; copyArray(vals17, tets[4][0]);
+  int vals18[] = {0, 0, 0}; copyArray(vals18, tets[4][1]);
+  int vals19[] = {1, 1, 1}; copyArray(vals19, tets[4][2]);
+  int vals20[] = {0, 1, 1}; copyArray(vals20, tets[4][3]);
+
+  int vals21[] = {0, 0, 0}; copyArray(vals21, tets[5][0]);
+  int vals22[] = {1, 1, 1}; copyArray(vals22, tets[5][1]);
+  int vals23[] = {0, 1, 1}; copyArray(vals23, tets[5][2]);
+  int vals24[] = {0, 0, 1}; copyArray(vals24, tets[5][3]);
+
+}
+
+
+
+Geom getVertClassification(int i, int j, int k, Sizes sizes)
 {
  int model_dim;
  int model_tag;
@@ -801,7 +815,7 @@ if ( i == 0 && j == 0 && k == 0 )
 {
   model_dim = 2;
   model_tag = 4;
-} else if ( z == 0)  // top face (parallel to x-y plane)
+} else if ( k == numElz)  // top face (parallel to x-y plane)
 {
   model_dim = 2;
   model_tag = 5;
@@ -812,52 +826,73 @@ if ( i == 0 && j == 0 && k == 0 )
   model_tag = 0;
 }
 
-  Goem geo = {model_dim, model_tag};
+  Geom geo = {model_tag, model_dim};
   return geo;
 }
 
 // determine the unique set of edges as defined by their vertices
 void extractEdges()
 {
+  std::cout << "extracting edges" << std::endl;
 // algorithm: loop over vertices in tet, form edge between current vertex and
 //            all previous vertices, check if edge is already in list
 //            add it if not
+  for (int i=0; i < NFACES; ++i)
+  {
+    for (int j=0; j < 2; ++j)
+    {
+      for (int k = 0; k < 3; ++k)
+      {
+        edges[i][j][k] = 0;
+      }
+    }
+  }
+
 
   int nedges=0;
   for (int i=0; i < NTETS; ++i)
   {
-    for (int j=0; j < 4, ++j)
+    for (int j=0; j < 4; ++j)
     {
       for (int k=(j+1); k < 4; ++ k)
       {
         // check against list of existing edges
-        bool already_added = checkEdges(tets[i][j], tets[i][k]);
+        bool already_added = checkEdges(tets[i][j], tets[i][k], nedges);
 
         if (!already_added)
         {
-          if (nedges > 18)
-            std::cerr << "Warning: too many edges detected" << std::endl;
+          if (nedges >= NEDGES)
+            std::cerr << "  Warning: too many edges detected" << std::endl;
 
-          edges[nedges][0] = tets[i][0];
-          edges[nedges][1] = tets[i][j];
-          ++nedges
+          copyArray(tets[i][j], edges[nedges][0]);
+          copyArray(tets[i][k], edges[nedges][1]); 
+          ++nedges;
         }
       }
     }
+  }
+
+  if (nedges != NEDGES)
+  {
+    std::cerr << "Warning: wrong number of edges detected" << std::endl;
+    throw nedges;
+  } else
+  {
+    std::cout << "Correct number of edges detected" << std::endl;
   }
 }
 
 // check if the edges list already contains the edge defined by 
 // these two verts
-bool checkEdges(int vert1[], int vert2[], int nedges)
+bool checkEdges(int vert1[3], int vert2[3], int nedges)
 {
   bool found1;
   bool found2;
   for (int i=0; i < nedges; ++i)
   {
     // check if edges[i] contains vert1
-    found1 = contains(edges[i], vert1);
-    found2 = contains(edges[i], vert2);
+    found1 = contains(edges[i], 2, vert1);
+    found2 = contains(edges[i], 2, vert2);
 
     if (found1 && found2)
       return true;
@@ -867,17 +902,17 @@ bool checkEdges(int vert1[], int vert2[], int nedges)
 
 }
 
-bool checkFace(int vert1[], int vert2[], int vert3[], int nfaces)
+bool checkFace(int vert1[3], int vert2[3], int vert3[3], int nfaces)
 {
   bool found1;
   bool found2;
   bool found3;
 
-  for (int i=0; i < nfaces, ++i)
+  for (int i=0; i < nfaces; ++i)
   {
-    found1 = contains(faces[i], vert1);
-    found2 = contains(faces[i], vert2);
-    found3 = contains(faces[i], vert3);
+    found1 = contains(faces[i], 3, vert1);
+    found2 = contains(faces[i], 3, vert2);
+    found3 = contains(faces[i], 3, vert3);
 
     if (found1 && found2 && found3)
       return true;
@@ -886,17 +921,18 @@ bool checkFace(int vert1[], int vert2[], int vert3[], int nfaces)
   return false;
 }
 
-// check if the specified entry in the edges list contains a given
+// check if the specified entry in th list contains a given
 // vertex (in either position)
-bool contains(int edge_entry[][3], int vert1[])
+bool contains(int list_entry[][3], const int dim1, int vert1[3])
 {
-  for (int i = 0; i < 2; ++i)
+  bool matched;
+  for (int i = 0; i < dim1; ++i)
   {
 
-    bool matched = true;
+    matched = true;
     for (int j=0; j < 3; ++j)
     {
-      matched = matched && vert1[j] == edge_entry[i][j];
+      matched = matched && (vert1[j] == list_entry[i][j]);
     }
     if (matched)
       return matched;
@@ -908,10 +944,25 @@ bool contains(int edge_entry[][3], int vert1[])
 // get the list of triangles 
 void extractFaces()
 {
+  std::cout << "extracting faces" << std::endl;
 // algorithm: loop over vertices in tet, form face between current vertex and
 //            all sets of 2 future vertices, check if face is already in list
 //            add it if not
 
+  for (int i=0; i < NFACES; ++i)
+  {
+    for (int j=0; j < 3; ++j)
+    {
+      for (int k = 0; k < 3; ++k)
+      {
+        faces[i][j][k] = 0;
+      }
+    }
+  }
+
+
+  bool foundface;
+  int nfaces = 0;
   for (int i=0; i < NTETS; ++i)
   {
     for (int v1=0; v1 < 4; ++v1)
@@ -920,7 +971,56 @@ void extractFaces()
       {
         for (int v3=(v2+1); v3 < 4; ++v3)
         {
+          foundface = checkFace(tets[i][v1], tets[i][v2], tets[i][v3], nfaces);
+          if (!foundface)
+          {
+            if (nfaces >= NFACES)
+              std::cerr << "Warning: too many faces detected" << std::endl;
+
+            copyArray(tets[i][v1], faces[nfaces][0]); 
+            copyArray(tets[i][v2], faces[nfaces][1]); 
+            copyArray(tets[i][v3], faces[nfaces][2]); 
+            ++nfaces;
+          }
+        }
+      }
+    }
+  }
+
+  if ( nfaces != NFACES)
+  {
+    std::cerr << "Warning: wrong number of faces detected" << std::endl;
+    throw nfaces;
+  } else
+  { 
+    std::cout << "Correct number of faces detected" << std::endl;
+  }
+}
 
 
+void copyArray(int src[3], int dest[3])
+{
+  for (int i = 0; i < 3; ++ i)
+    dest[i] = src[i];
+}
 
+void printArray(int vals[3])
+{
+  std::cout << vals[0] << ", " << vals[1] << ", " << vals[2];
+}
 
+void printEdges(int nedges)
+{
+  std::cout << "edges = " << std::endl;
+  for (int i=0; i < nedges; ++i)
+  {
+    std::cout << "  edge " << i << ": v1 = " << getVertNum(edges[i][0]);
+    std::cout << ", v2 = " << getVertNum(edges[i][1]); 
+    std::cout << std::endl;
+  }
+}
+
+int getVertNum(int vert[3])
+{
+  return vert[0] + 2*vert[1] + 4*vert[2];
+}
