@@ -25,6 +25,18 @@ struct _Geom {
 };
 typedef struct _Geom Geom;
 
+struct _VertIdx {
+  int i;
+  int j;
+  int k;
+};
+
+typedef struct _VertIdx VertIdx;
+
+// addition on VertIdx
+VertIdx add(const VertIdx v1, const VertIdx v2);
+VertIdx add(const VertIdx v1, const int arr[3]);
+
 #define NTETS 6
 #define NEDGES 19
 #define NFACES 18
@@ -44,7 +56,7 @@ void declareTets();
 
 // get the classification of vertices at indices (i, j, k) in the array of vertices
 Geom getVertClassification(int i, int j, int k, Sizes sizes);
-
+Geom getVertClassification(VertIdx v, Sizes sizes);
 // populate the global variable edges by inspecting tets
 void extractEdges();
 
@@ -65,6 +77,19 @@ void extractRearEdges();
 
 // populate rear_face_idx and create_face arrays
 void extractRearFaces();
+
+// create the edges on a brick
+void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** verts);
+
+// create a single edge
+void createEdge(apf::Mesh2* m, apf::MeshEntity* edge_verts[2], apf::ModelEntity* model_entity);
+
+// get the model entity given the geometric classification of the vertices
+apf::ModelEntity* getModelEntity(apf::Mesh* m, Geom g_class[], const int ng);
+
+// get a vert from the array of all vertices
+apf::MeshEntity* getVert(VertIdx pos, apf::MeshEntity**** verts);
+
 
 // copy array of length 3
 void copyArray(int src[3], int dest[3]);
@@ -495,7 +520,10 @@ void declareTets()
 
 }
 
-
+Geom getVertClassification(VertIdx v, Sizes sizes)
+{
+  return getVertClassification(v.i, v.j, v.k, sizes);
+}
 
 Geom getVertClassification(int i, int j, int k, Sizes sizes)
 {
@@ -896,9 +924,14 @@ void extractRearFaces()
 }
 
 // create the needed edges on an element
-void createEdges(const int i, const int j, const int k, apf::MeshEntity**** verts)
+// TODO: need Mesh*, need sizes
+void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** verts)
 {
   int idx;
+  VertIdx vertidx;
+  apf::MeshEntity* verts_i[2];
+  Geom g_class[2]; // geometric classification of the vertices
+  apf::ModelEntity* model_entity;
   for (int i = 0; i < NEDGES; ++i)
   {
     idx = contains(rear_edge_idx, 6, i);
@@ -907,21 +940,76 @@ void createEdges(const int i, const int j, const int k, apf::MeshEntity**** vert
     {
       if (!create_edge[idx])
       {
-        continue
+        continue;
       }
     }
     // if we get here, we should create the edge
-    
+    for (int j=0; j < 2; ++j)
+    {
+      vertidx = add(start, edges[i][j]);
+      verts_i[j] = getVert(vertidx, verts);
+      g_class[j] = getVertClassification(vertidx, sizes);
+    }
+
+    model_entity = getModelEntity(m, g_class, 2);
+    createEdge(m, verts_i, model_entity);
+  }  
 
 }
 
 
-void createEdge(apf::MeshEntity* edge_verts[2]) 
+void createEdge(apf::Mesh2* m, apf::MeshEntity* edge_verts[2], apf::ModelEntity* model_entity) 
 {
-  edge_verts[0] = vertices_i[0];
-  edge_verts[1] = vertices_i[1];
   m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
 
+}
+
+// get the ModelEntity that the edge defind by g1 and g2 should be classified
+// on
+apf::ModelEntity* getModelEntity(apf::Mesh* m, Geom g_class[], const int ng)
+{
+  int model_dim;
+  int model_tag;
+
+  int max_dim = 0;
+  int min_tag = INT_MAX;
+  int n_max_dim = 0;
+
+  // find the maximum dimension
+  for (int i=0; i < ng; ++i)
+  {
+    model_dim = g_class[i].model_dim;
+    if (model_dim > max_dim)
+    {
+      max_dim = model_dim;
+      n_max_dim = 1;
+    } else if (model_dim == max_dim)
+    {
+      ++n_max_dim;
+    }
+  }
+
+  // now find the minimum tag on that dimension
+  for (int i=0; i < ng; ++i)
+  {
+    if (g_class[i].model_dim == max_dim)
+    {
+      model_tag = g_class[i].model_tag;
+      if (model_tag < min_tag)
+        min_tag = model_tag;
+    }
+  }
+
+  // max_dim and min_tag now fully describe the geometric entity
+  return m->findModelEntity(max_dim, min_tag);
+}
+
+
+// get a vert from the array of all vertices
+apf::MeshEntity* getVert(VertIdx pos, apf::MeshEntity**** verts)
+{
+  return verts[pos.i][pos.j][pos.k];
+}
 
 void copyArray(int src[3], int dest[3])
 {
@@ -953,7 +1041,7 @@ int getVertNum(int vert[3])
 int contains(int vals[], const int len, int  val)
 {
   int idx = -1;
-  for (int i = 0; i < len)
+  for (int i = 0; i < len; ++i)
   {
     if (vals[i] == val)
     {
@@ -962,5 +1050,17 @@ int contains(int vals[], const int len, int  val)
     }
   }
 
-  return val;
+  return idx;
+}
+
+VertIdx add(const VertIdx v1, const VertIdx v2)
+{
+  VertIdx result = {v1.i + v2.i, v1.j + v2.j, v1.k + v2.k};
+  return result;
+}
+
+VertIdx add(const VertIdx v1, const int arr[3])
+{
+  VertIdx result = {v1.i + arr[0], v1.j + arr[1], + v1.k + arr[2]};
+  return result;
 }
