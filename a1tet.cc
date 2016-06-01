@@ -13,6 +13,17 @@
 #include "apfSBPShape.h"
 #include "apfSBPShape3.h"
 
+// 3D array
+struct _Array3 {
+  MeshEntity** ptr;
+  int m;
+  int n;
+  int p;
+};
+typedef struct _Array3 Array3;
+ 
+
+
 struct _Sizes {
   int numElx;
   int numEly;
@@ -51,6 +62,50 @@ bool create_edge[6];  // whether or not to create the edge
 
 int rear_face_idx[6];  // indices of rear faces in the faces list
 bool create_face[6];  // whether or not to create the faces
+
+// 3D array functions
+//-----------------------------------------------------------------------------
+int getInd3(const int i, const int j, const int k, const int imax, const int jmax, const int kmax)
+{
+  return i + j*imax + imax*jmax*k;
+}
+
+MeshEntity* getindex3(Array3 arr, const int i, const int j, const int k)
+{
+ const int idx = getInd3(i, j, k, arr.m, arr.n, arr.p);
+ return arr.ptr[idx];
+}
+
+MeshEntity* getindex3(Array3 arr, VertIdx v)
+{
+  return getindex3(Array3 arr, v.i, v.j, v.k);
+}
+
+void setindex3(Array3 arr, const int i, const int j, const int k, 
+              apf::MeshEntity* val)
+{
+ const int idx = getInd3(i, j, k, arr.m, arr.n, arr.p);
+// printf("setting arr %i %i %i = linear index %i to value %10.6f\n", i, j, k, idx, val);
+ arr.ptr[idx] = val;
+}
+
+void setindex3(Array3 arr, VertIdx v,
+               apf::MeshEntity* val)
+{
+  setindex3(arr, v.i, v.j, v.k, val)
+}
+
+void zero3(Array3 arr)
+{
+  int len = arr.m*arr.n*arr.p;
+  for (int i = 0; i < len; ++i)
+  {
+    arr.ptr[i] = NULL;
+  }
+}
+
+//-----------------------------------------------------------------------------
+
 
 // declare the verts used to break the cube into tetrahedra
 void declareTets();
@@ -985,6 +1040,7 @@ void identifyFaces(VertIdx start)
 void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** verts)
 {
   std::cout << "creating edges" << std::endl;
+  std::cout << "start idx = " << start.i << ", " << start.j << ", " << start.k << std::endl;
   int idx;
   VertIdx vertidx;
   apf::MeshEntity* verts_i[2];
@@ -1005,6 +1061,8 @@ void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
     for (int j=0; j < 2; ++j)
     {
       vertidx = add(start, edges[i][j]);
+
+      std::cout << "vert idx = " << vertidx.i << ", " << vertidx.j << ", " << vertidx.k << std::endl;
       verts_i[j] = getVert(vertidx, verts);
       std::cout << "vert " << j << " = " << verts[j] << std::endl;
       g_class[j] = getVertClassification(vertidx, sizes);
