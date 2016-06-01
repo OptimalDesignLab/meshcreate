@@ -11,6 +11,7 @@
 #include <limits.h>
 //#include "funcs1.h"
 #include "apfSBPShape.h"
+#include "apfSBPShape3.h"
 
 struct _Sizes {
   int numElx;
@@ -48,8 +49,8 @@ int faces[NFACES][3][3];  // describe the vertices defining each face of hte tet
 int rear_edge_idx[6]; // indices of the rear edges in the edges list
 bool create_edge[6];  // whether or not to create the edge 
 
-int rear_face_idx[3];  // indices of rear faces in the faces list
-bool create_face[3];  // whether or not to create the faces
+int rear_face_idx[6];  // indices of rear faces in the faces list
+bool create_face[6];  // whether or not to create the faces
 
 // declare the verts used to break the cube into tetrahedra
 void declareTets();
@@ -75,8 +76,14 @@ void extractFaces();
 // populate the rear_edge_idx and create_edge arrays
 void extractRearEdges();
 
+// identiry which edges need to be created for a given element
+void identifyEdges(VertIdx start);
+
 // populate rear_face_idx and create_face arrays
 void extractRearFaces();
+
+// populate create_face
+void identifyFaces(VertIdx start);
 
 // create the edges on a brick
 void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** verts);
@@ -84,12 +91,20 @@ void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
 // create a single edge
 void createEdge(apf::Mesh2* m, apf::MeshEntity* edge_verts[2], apf::ModelEntity* model_entity);
 
+// create all the faces on a cube
+void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** verts);
+
+// create a single face
+void createFace(apf::Mesh2* m, apf::MeshEntity* edge_verts[3], apf::ModelEntity* model_entity);
+
 // get the model entity given the geometric classification of the vertices
 apf::ModelEntity* getModelEntity(apf::Mesh* m, Geom g_class[], const int ng);
 
 // get a vert from the array of all vertices
 apf::MeshEntity* getVert(VertIdx pos, apf::MeshEntity**** verts);
 
+// get the vertices of a tet
+void getTetVerts(VertIdx start, int tet[4][3], apf::MeshEntity**** verts_all,  apf::MeshEntity* verts[4]);
 
 // copy array of length 3
 void copyArray(int src[3], int dest[3]);
@@ -157,7 +172,6 @@ int main(int argc, char** argv)
   extractFaces();
   extractRearEdges();
   extractRearFaces();
-  return 0;
 
   // TODO: fix this 
   long numElx_l = numElx;
@@ -241,7 +255,7 @@ int main(int argc, char** argv)
     {
       for (int i = 0; i < (numElx+1); ++i) // loop over rows (left to right)
       {
-  //       std::cout << "creating point at x = " << x_inner << " , y = " << y_inner << std::endl;
+         std::cout << "creating point at x = " << x_inner << " , y = " << y_inner << " , z = " << z_inner << std::endl;
          coords_i[0] = x_inner;
          coords_i[1] = y_inner;
          coords_i[2] = z_inner;
@@ -250,6 +264,7 @@ int main(int argc, char** argv)
          model_entity = m->findModelEntity(geo.model_dim, geo.model_tag);
            
          vertices[i][j][k] = m->createVert(model_entity);
+         std::cout << "vertex = " << vertices[i][j][k] << std::endl;
          m->setPoint(vertices[i][j][k], 0, coords_i);
          x_inner = x_inner + x_spacing + pert_mag*sin(apply_pert*pert_fac*x_inner);
          y_inner = y_i + pert_mag*sin(apply_pert*pert_fac*x_inner);
@@ -272,19 +287,13 @@ int main(int argc, char** argv)
     z_inner = z_i;
 
   }
-/*
+
   // classify all MeshEntities on geometric face
-  model_dim = 2;
-  model_tag = 0;
+  int model_dim = 3;
+  int model_tag = 0;
   model_entity = m->findModelEntity(model_dim, model_tag);
-  
+  VertIdx start;
   apf::MeshEntity* vertices_i[4];  // hold vertices for a particular element
-  // bools to control which edges get created
-  bool do_bottom = false;
-  bool do_diag = false;
-  bool do_left = false;
-  bool do_right = false;
-  bool do_top = false;
   // build element from verticies
   for (int k = 0; k < numElz; ++k)
   {
@@ -292,34 +301,26 @@ int main(int argc, char** argv)
     {
       for (int i = 0; i < numElx; ++i)
       {
-  //      std::cout << "\ncreating element " << i << ", " << j << std::endl;
+        std::cout << "\ncreating element " << i << ", " << j << ", " << k << std::endl;
   //      int el_num = i + numElx*j;
   //      std::cout << "creating element i = " << i << " , j = " << j << std::endl;
-        // get correct vertices
-        vertices_i[0] = vertices[i][j];
-        vertices_i[1] = vertices[i+1][j];
-        vertices_i[2] = vertices[i][j+1];
+        start.i = i; start.j = j; start.k = k;
+        identifyEdges(start);
+        createEdges(m, sizes, start, vertices);
+        identifyFaces(start);
+        createFaces(m, sizes, start, vertices);
 
-        // counterclockwise ordering
-  //      std::cout << "about to create first triangle" << std::endl;
-        apf::buildElement(m, model_entity, apf::Mesh::TRIANGLE, vertices_i);
-  //      m->createEntity(apf::Mesh::TRIANGLE, model_entity, vertices_i);
+        for (int v = 0; v < 6; ++v)
+        {
+          getTetVerts(start, tets[v], vertices, vertices_i);
+          apf::buildElement(m, model_entity, apf::Mesh::TET, vertices_i);
+        }
 
-        // do other half of rectangle
-        vertices_i[0] = vertices[i+1][j];
-        vertices_i[1] = vertices[i+1][j+1];
-        vertices_i[2] = vertices[i][j+1];a
-
-
-
-  //       std::cout << "about to create second triangle" << std::endl;
-  //      m->createEntity(apf::Mesh::TRIANGLE, model_entity, vertices_i);
-        apf::buildElement(m, model_entity, apf::Mesh::TRIANGLE, vertices_i);
 
        }
     }
   }
-*/
+
   // build, verify  mesh
 /*
   std::cout << "deriving model" << std::endl;
@@ -328,13 +329,13 @@ int main(int argc, char** argv)
 */
   m->acceptChanges();
   std::cout << "accepted changes" << std::endl;
-  checkMesh(m);
+//  checkMesh(m);
   m->verify();
   std::cout << "verified" << std::endl;
 
  // for quadratic meshes
 //  apf::FieldShape* linear2 = apf::getSerendipity();
-    apf::FieldShape* linear2 = apf::getSBPShape(1);
+    apf::FieldShape* linear2 = apf::getSBP3Shape(1);
 //  apf::FieldShape* linear2 = apf::getLagrange(2);
   apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
 
@@ -897,6 +898,36 @@ void extractRearEdges()
   }
 }
 
+//  set the values in create_edge
+//  start should be the indices of the vertex at the origin of the cube
+void identifyEdges(VertIdx start)
+{
+  for (int i=0; i < 6; ++i)
+  {
+    create_edge[i] = false;
+  }
+
+  const int i = start.i;
+  const int j = start.j;
+  const int k = start.k;
+  // select which edges to create
+  if (j == 0 && k == 0)
+    create_edge[0] = true;
+  if (i == 0 && k == 0)
+    create_edge[1] = true;
+  if ( i == 0 && j == 0)
+    create_edge[2] = true;
+  if ( j == 0 )
+    create_edge[3] = true;
+  if ( i == 0)
+    create_edge[4] = true;
+  if ( k == 0)
+    create_edge[5] = true;
+
+}
+
+    
+
 void extractRearFaces()
 {
   int rear_faces[6][3][3] = {
@@ -923,10 +954,37 @@ void extractRearFaces()
   }
 }
 
+void identifyFaces(VertIdx start)
+{
+  for (int i=0; i < 6; ++i)
+  {
+    create_face[i] = false;
+  }
+
+  // select which faces to create
+  if (start.j == 0)
+  {
+    create_face[0] = true;
+    create_face[1] = true;
+  }
+  if (start.i == 0)
+  {
+    create_face[2] = true;
+    create_face[3] = true;
+  }
+  if (start.k == 0)
+  {
+    create_face[4] = true;
+    create_face[5] = true;
+  }
+}
+
+
 // create the needed edges on an element
 // TODO: need Mesh*, need sizes
 void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** verts)
 {
+  std::cout << "creating edges" << std::endl;
   int idx;
   VertIdx vertidx;
   apf::MeshEntity* verts_i[2];
@@ -948,6 +1006,7 @@ void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
     {
       vertidx = add(start, edges[i][j]);
       verts_i[j] = getVert(vertidx, verts);
+      std::cout << "vert " << j << " = " << verts[j] << std::endl;
       g_class[j] = getVertClassification(vertidx, sizes);
     }
 
@@ -963,6 +1022,58 @@ void createEdge(apf::Mesh2* m, apf::MeshEntity* edge_verts[2], apf::ModelEntity*
   m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
 
 }
+
+void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** verts)
+{
+  std::cout << "creating faces" << std::endl;
+  int idx;
+  VertIdx vertidx;
+  apf::MeshEntity* verts_i[3];
+  Geom g_class[3]; // geometric classification of the vertices
+  apf::ModelEntity* model_entity;
+  for (int i = 0; i < NFACES; ++i)
+  {
+    std::cout << "considering face " << i << std::endl;
+    idx = contains(rear_face_idx, 6, i);
+
+    if (idx > 0)  // if found
+    {
+      std::cout << "face is a rear face" << std::endl;
+      if (!create_face[idx])
+      {
+        std::cout << "not creating face" << std::endl;
+        continue;
+      }
+    }
+    std::cout << "creating face " << std::endl;
+    // if we get here, we should create the edge
+    for (int j=0; j < 3; ++j)
+    {
+      vertidx = add(start, faces[i][j]);
+      verts_i[j] = getVert(vertidx, verts);
+      g_class[j] = getVertClassification(vertidx, sizes);
+      std::cout << "vert " << j << " = " << verts[j] << std::endl;
+    }
+    std::cout << "finished getting geometric classification" << std::endl;
+
+    model_entity = getModelEntity(m, g_class, 3);
+    std::cout << "model_entity = " << model_entity << std::endl;
+    std::cout << "creating face" << std::endl;
+    createFace(m, verts_i, model_entity);
+    std::cout << "finished creating face" << std::endl;
+  }  
+
+}
+
+
+void createFace(apf::Mesh2* m, apf::MeshEntity* edge_verts[3], apf::ModelEntity* model_entity) 
+{
+  m->createEntity(apf::Mesh::TRIANGLE, model_entity, edge_verts);
+
+}
+
+
+
 
 // get the ModelEntity that the edge defind by g1 and g2 should be classified
 // on
@@ -1010,6 +1121,17 @@ apf::MeshEntity* getVert(VertIdx pos, apf::MeshEntity**** verts)
 {
   return verts[pos.i][pos.j][pos.k];
 }
+
+void getTetVerts(VertIdx start, int tet[4][3], apf::MeshEntity**** verts_all,  apf::MeshEntity* verts[4])
+{
+  VertIdx pos;
+  for (int i=0; i < 4; ++i)
+  {
+    pos = add(start, tet[i]);
+    verts[i] = getVert(pos, verts_all);
+  }
+}
+
 
 void copyArray(int src[3], int dest[3])
 {
