@@ -57,8 +57,9 @@ int tets[NTETS][4][3];  // define vertices used for constructing tetrahedrons
 int edges[NEDGES][2][3];  // describe vertices defining each edge of the tets
 int faces[NFACES][3][3];  // describe the vertices defining each face of hte tets
 
-int rear_edge_idx[6]; // indices of the rear edges in the edges list
-bool create_edge[6];  // whether or not to create the edge 
+#define NREAREDGES 12
+int rear_edge_idx[NREAREDGES]; // indices of the rear edges in the edges list
+bool create_edge[NREAREDGES];  // whether or not to create the edge 
 
 int rear_face_idx[6];  // indices of rear faces in the faces list
 bool create_face[6];  // whether or not to create the faces
@@ -936,19 +937,27 @@ void extractFaces()
 
 void extractRearEdges()
 {
-  int rear_edges[6][2][3] ={ 
-    // edge of the cube
+  int rear_edges[NREAREDGES][2][3] ={ 
+    // edge on axes of the cube
     { {0, 0, 0}, {1, 0, 0} },
     { {0, 0, 0}, {0, 1, 0} },
     { {0, 0, 0}, {0, 0, 1} },
   
-    // face edges
+    // j = 0 edges
     { {0, 0, 0}, {1, 0, 1} },
+    { {1, 0, 0}, {1, 0, 1} },
+    { {0, 0, 1}, {1, 0, 1} },
+    // i = 0 edges
     { {0, 0, 0}, {0, 1, 1} },
-    { {0, 0, 0}, {1, 1, 0} }
+    { {0, 1, 0}, {0, 1, 1} },
+    { {0, 0, 1}, {0, 1, 1} },
+    // k = 0 edges
+    { {0, 0, 0}, {1, 1, 0} },
+    { {1, 0, 0}, {1, 1, 0} },
+    { {0, 1, 0}, {1, 1, 0} },
   };
 
-  for (int i = 0; i < 6; ++i)
+  for (int i = 0; i < NREAREDGES; ++i)
   {
     rear_edge_idx[i] = findEdge(rear_edges[i]);
     create_edge[i] = false;
@@ -957,6 +966,7 @@ void extractRearEdges()
       std::cerr << "rear edge " << i << " not found" << std::endl;
       throw i;
     }
+    std::cout << "rear edge " << i << " idx = " << rear_edge_idx[i] << std::endl;
 
   }
 }
@@ -965,7 +975,7 @@ void extractRearEdges()
 //  start should be the indices of the vertex at the origin of the cube
 void identifyEdges(VertIdx start)
 {
-  for (int i=0; i < 6; ++i)
+  for (int i=0; i < NREAREDGES; ++i)
   {
     create_edge[i] = false;
   }
@@ -981,11 +991,23 @@ void identifyEdges(VertIdx start)
   if ( i == 0 && j == 0)
     create_edge[2] = true;
   if ( j == 0 )
+  {
     create_edge[3] = true;
-  if ( i == 0)
     create_edge[4] = true;
-  if ( k == 0)
     create_edge[5] = true;
+  }
+  if ( i == 0)
+  {
+    create_edge[6] = true;
+    create_edge[7] = true;
+    create_edge[8] = true;
+  }
+  if ( k == 0)
+  {
+    create_edge[9] = true;
+    create_edge[10] = true;
+    create_edge[11] = true;
+  }
 
 }
 
@@ -1014,6 +1036,8 @@ void extractRearFaces()
       std::cerr << "rear face " << i << " not found" << std::endl;
       throw i;
     }
+
+    std::cout << "rear face " << i << " idx = " << rear_face_idx[i] << std::endl;
   }
 }
 
@@ -1057,7 +1081,7 @@ void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
   for (int i = 0; i < NEDGES; ++i)
   {
     std::cout << "\nconsidering edge " << i << std::endl;
-    idx = contains(rear_edge_idx, 6, i);
+    idx = contains(rear_edge_idx, NREAREDGES, i);
 
     if (idx > 0)  // if found
     {
@@ -1139,13 +1163,12 @@ void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
 }
 
 
-void createFace(apf::Mesh2* m, apf::MeshEntity* edge_verts[3], apf::ModelEntity* model_entity) 
+void createFace(apf::Mesh2* m, apf::MeshEntity* face_verts[3], apf::ModelEntity* model_entity) 
 {
-  std::cout << "edge_verts = " << edge_verts[0] << ", " << edge_verts[1];
-  std::cout << ", " << edge_verts[2] << std::endl;
+  std::cout << "face_verts = " << face_verts[0] << ", " << face_verts[1];
+  std::cout << ", " << face_verts[2] << std::endl;
   std::cout << "model entity = " << model_entity << std::endl;
-  m->createEntity(apf::Mesh::TRIANGLE, model_entity, edge_verts);
-
+  apf::buildElement(m, model_entity, apf::Mesh::TRIANGLE, face_verts);
 }
 
 
