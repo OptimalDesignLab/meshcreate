@@ -376,6 +376,7 @@ int main(int argc, char** argv)
 
         for (int v = 0; v < 6; ++v)
         {
+          std::cout << "\ncreating tet " << v << std::endl;
           getTetVerts(start, tets[v], vertices, vertices_i);
           apf::buildElement(m, model_entity, apf::Mesh::TET, vertices_i);
         }
@@ -1141,7 +1142,7 @@ void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
       }
     }
     std::cout << "creating face " << std::endl;
-    // if we get here, we should create the edge
+    // if we get here, we should create the face
     for (int j=0; j < 3; ++j)
     {
 
@@ -1233,6 +1234,7 @@ void getTetVerts(VertIdx start, int tet[4][3], apf::MeshEntity**** verts_all,  a
   for (int i=0; i < 4; ++i)
   {
     pos = add(start, tet[i]);
+    std::cout << "tet vert " << i << " idx = " << pos.i << ", " << pos.j << ", " << pos.k << std::endl;
     verts[i] = getVert(pos, verts_all);
   }
 }
