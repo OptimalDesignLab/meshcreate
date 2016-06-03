@@ -28,9 +28,9 @@ int main(int argc, char** argv)
   // the subdivions is the sameon used for Marching Tetrahedra
   // projected onto the xyz planes, you get two triangles in x and y
   // and one in z
-  int numElx = 1;
-  int numEly = 1; 
-  int numElz = 1;
+  int numElx = 2;
+  int numEly = 2; 
+  int numElz = 2;
   double xrange = 2.0;
   double yrange = 2.0;
   double zrange = 2.0;

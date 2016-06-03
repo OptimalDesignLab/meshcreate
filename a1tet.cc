@@ -108,6 +108,8 @@ void zero3(Array3 arr)
 //-----------------------------------------------------------------------------
 
 
+
+
 // declare the verts used to break the cube into tetrahedra
 void declareTets();
 
@@ -180,7 +182,52 @@ int contains(int vals[], const int len, int  val);
 // print the verts array
 void printVerts(apf::MeshEntity**** verts, Sizes sizes);
 
+void calcCentroid(apf::Mesh* m, apf::MeshEntity** verts,  double centroid[3]);
+
 void checkMesh(apf::Mesh* m);
+
+void checkMeshFaces(apf::Mesh* m);
+
+class FaceCallback : public apf::BuildCallback
+{
+  public:
+    apf::Mesh2* m_closure;
+    void call(apf::MeshEntity* e)
+    {
+      int type = m_closure->getType(e);
+      const char* tname =  apf::Mesh::typeName[type];
+      int dim = apf::Mesh::typeDimension[type];
+
+      std::cout << "new entity of type " << tname << " (dimension " << dim << ") created" << std::endl;
+    }
+};
+class RegionCallback : public apf::BuildCallback
+{
+  public:
+    apf::Mesh2* m_closure;
+    void call(apf::MeshEntity* e)
+    {
+      int type = m_closure->getType(e);
+      const char* tname =  apf::Mesh::typeName[type];
+      int dim = apf::Mesh::typeDimension[type];
+      if (dim == 2)
+      {
+        apf::Downward down;
+        m_closure -> getDownward(e, 0, down);
+        double centroid[3];
+        calcCentroid(m_closure, down, centroid);
+        std::cout << "created unexpected triangles with centroid = " << centroid[0];
+        std::cout << ", " << centroid[1] << ", " << centroid[2] << std::endl;
+        std::cout << "face vertices = " << down[0] << ", " << down[1] << ", ";
+        std::cout << down[2] << std::endl;
+      } else
+      {
+
+
+        std::cout << "new entity of type " << tname << " (dimension " << dim << ") created" << std::endl;
+      }
+    }
+};
 
 
 // the program creates a cartesian mesh composed to triangles.
@@ -351,7 +398,8 @@ int main(int argc, char** argv)
   }
 
   printVerts(vertices, sizes);
-
+  RegionCallback cb;
+  cb.m_closure = m;
   // classify all MeshEntities on geometric face
   int model_dim = 3;
   int model_tag = 0;
@@ -378,7 +426,7 @@ int main(int argc, char** argv)
         {
           std::cout << "\ncreating tet " << v << std::endl;
           getTetVerts(start, tets[v], vertices, vertices_i);
-          apf::buildElement(m, model_entity, apf::Mesh::TET, vertices_i);
+          apf::buildElement(m, model_entity, apf::Mesh::TET, vertices_i, &cb);
         }
 
 
@@ -394,6 +442,7 @@ int main(int argc, char** argv)
 */
   m->acceptChanges();
   std::cout << "accepted changes" << std::endl;
+  checkMeshFaces(m);
 //  checkMesh(m);
   m->verify();
   std::cout << "verified" << std::endl;
@@ -438,7 +487,7 @@ int main(int argc, char** argv)
 
 */
   // write output and clean up
-  apf::writeVtkFiles("outTri", m);
+  apf::writeVtkFiles("outTet", m);
   m->writeNative("./meshfiles/abc.smb");
 /*
   apf::MeshIterator* it = m->begin(2);
@@ -551,6 +600,77 @@ void checkMesh(apf::Mesh* m)
 
 } // end function
 
+
+void calcCentroid(apf::Mesh* m, apf::MeshEntity* e, double centroid[3])
+{
+  apf::Downward verts;
+  m->getDownward(e, 0, verts);
+  calcCentroid(m, verts, centroid);
+
+}
+
+void calcCentroid(apf::Mesh* m, apf::MeshEntity** verts,  double centroid[3])
+{
+  apf::Vector3 p1;
+  apf::Vector3 p2;
+  apf::Vector3 p3;
+  m->getPoint(verts[0], 0, p1);
+  m->getPoint(verts[1], 0, p2);
+  m->getPoint(verts[2], 0, p3);
+
+  for (int i =0; i < 3; ++i)
+  {
+    centroid[i] = (p1[i] + p2[i] + p3[i])/3;
+  }
+}
+
+void checkMeshFaces(apf::Mesh* m)
+{
+  apf::MeshEntity* e;
+  apf::Up up;
+  apf::ModelEntity* me;
+  int model_dim;
+  int model_tag;
+  double centroid[3];
+
+  int facenum = 0;
+  apf::MeshIterator* it = m->begin(2);
+
+  while ( (e = m->iterate(it)) )
+  {
+    me = m->toModel(e);
+    model_dim = m->getModelType(me);
+    model_tag = m->getModelTag(me);
+    m->getUp(e, up);
+    if (model_dim == 2) // equal order classification
+    {
+      calcCentroid(m, e, centroid);
+      if (up.n != 1)
+      {
+        std::cout << "face " << facenum << " has " << up.n;
+        std::cout << " adjacent regions, expected 1";
+        std::cout << ", centroid = " << centroid[0] << ", " << centroid[1];
+        std::cout << ", " << centroid[2] << std::endl;
+        std::cout << "model_dim = " << model_dim << ", model_tag = " << model_tag << std::endl;
+        std::cout << "model entity = " << me << std::endl;
+      }
+    } else if (model_dim == 3)
+    {
+      if (up.n != 2)
+      {
+        std::cout << "face " << facenum << " has " << up.n;
+        std::cout << " adjacent regions, expected 2";
+        std::cout << ", centroid = " << centroid[0] << ", " << centroid[1];
+        std::cout << ", " << centroid[2] << std::endl;
+        std::cout << "model_dim = " << model_dim << ", model_tag = " << model_tag << std::endl;
+        std::cout << "model entity = " << me << std::endl;
+      }
+    }
+
+    ++facenum;
+
+  }
+}
 
 void declareTets()
 {
@@ -903,6 +1023,7 @@ void extractFaces()
   int nfaces = 0;
   for (int i=0; i < NTETS; ++i)
   {
+    std::cout << "\nconsidering tet " << i << std::endl;
     for (int v1=0; v1 < 4; ++v1)
     {
       for (int v2=(v1+1); v2 < 4; ++v2)
@@ -915,6 +1036,8 @@ void extractFaces()
             if (nfaces >= NFACES)
               std::cerr << "Warning: too many faces detected" << std::endl;
 
+            std::cout << "adding face with tet v1 = " << v1 << ", v2 = " << v2 << ", v3 = " << v3 << std::endl;
+            std::cout << "cube verts = " << getVertNum(tets[i][v1]) << ", " << getVertNum(tets[i][v2]) << ", " << getVertNum(tets[i][v3]) << std::endl;
             copyArray(tets[i][v1], faces[nfaces][0]); 
             copyArray(tets[i][v2], faces[nfaces][1]); 
             copyArray(tets[i][v3], faces[nfaces][2]); 
@@ -1163,13 +1286,23 @@ void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
 
 }
 
-
 void createFace(apf::Mesh2* m, apf::MeshEntity* face_verts[3], apf::ModelEntity* model_entity) 
 {
+  double centroid[3];
+  calcCentroid(m, face_verts, centroid);
+
   std::cout << "face_verts = " << face_verts[0] << ", " << face_verts[1];
   std::cout << ", " << face_verts[2] << std::endl;
   std::cout << "model entity = " << model_entity << std::endl;
-  apf::buildElement(m, model_entity, apf::Mesh::TRIANGLE, face_verts);
+  std::cout << "centroid = " << centroid[0] << ", " << centroid[1] << ", ";
+  std::cout << centroid[2] << std::endl;
+  apf::MeshEntity* e;
+  FaceCallback cb;
+  cb.m_closure = m;
+  e = apf::buildElement(m, model_entity, apf::Mesh::TRIANGLE, face_verts, &cb);
+
+  model_entity = m->toModel(e);
+  std::cout << "after creation, model_entity = " << model_entity << std::endl;
 }
 
 
