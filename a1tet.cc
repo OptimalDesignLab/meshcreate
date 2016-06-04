@@ -59,6 +59,10 @@ void declareTets();
 // get the classification of vertices at indices (i, j, k) in the array of vertices
 Geom getVertClassification(int i, int j, int k, Sizes sizes);
 Geom getVertClassification(VertIdx v, Sizes sizes);
+
+// get the classification of an edge defined by 2 verts
+// the edge must already exist
+Geom getEdgeClassification(apf::Mesh* m, apf::MeshEntity* verts[2]);
 // populate the global variable edges by inspecting tets
 void extractEdges();
 
@@ -785,6 +789,16 @@ if ( i == 0 && j == 0 && k == 0 )
   return geo;
 }
 
+Geom getEdgeClassification(apf::Mesh* m, apf::MeshEntity* verts[2])
+{
+
+  Geom geo;
+  apf::MeshEntity* e = apf::findUpward(m, apf::Mesh::EDGE, verts);
+  apf::ModelEntity* me = m->toModel(e);
+  geo.model_dim = m->getModelType(me);
+  geo.model_tag = m->getModelTag(me);
+  return geo;
+}
 // determine the unique set of edges as defined by their vertices
 void extractEdges()
 {
@@ -1195,12 +1209,15 @@ void createEdge(apf::Mesh2* m, apf::MeshEntity* edge_verts[2], apf::ModelEntity*
 
 }
 
+int tri_edges[3][2] = { {0, 1}, {1, 2}, {0, 2} };
+
 void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** verts)
 {
   std::cout << "\ncreating faces" << std::endl;
   int idx;
   VertIdx vertidx;
   apf::MeshEntity* verts_i[3];
+  apf::MeshEntity* edge_verts[2];
   Geom g_class[3]; // geometric classification of the vertices
   apf::ModelEntity* model_entity;
   for (int i = 0; i < NFACES; ++i)
@@ -1225,8 +1242,14 @@ void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
       vertidx = add(start, faces[i][j]);
       std::cout << "vert idx = " << vertidx.i << ", " << vertidx.j << ", " << vertidx.k << std::endl;
       verts_i[j] = getVert(vertidx, verts);
-      g_class[j] = getVertClassification(vertidx, sizes);
       std::cout << "vert " << j << " = " << verts_i[j] << std::endl;
+    }
+
+    for (int j=0; j < 3; ++ j)
+    {
+      edge_verts[0] = verts_i[tri_edges[j][0]];
+      edge_verts[1] = verts_i[tri_edges[j][1]];
+      g_class[j] = getEdgeClassification(m, edge_verts);
     }
     std::cout << "finished getting geometric classification" << std::endl;
 
