@@ -53,7 +53,7 @@ int main(int argc, char** argv)
   long numEltheta_l = numEltheta;
   long nvert = (numElr_l+1)*(numEltheta_l+1);
   long nedges = numElr_l*(numEltheta_l+1) + numEltheta_l*(numElr_l+1) + numElr_l*numEltheta_l;
-  long nel = numElr_l*numEltheta_l + 1;
+  long nel = numElr_l*numEltheta_l*2;
 
   std::cout << "expected entity counts: " << std::endl;
   std::cout << "  Vertices: " << nvert << std::endl;

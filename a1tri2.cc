@@ -60,7 +60,7 @@ int main(int argc, char** argv)
   long numEly_l = numEly;
   long nvert = (numElx_l+1)*(numEly_l+1);
   long nedges = numElx_l*(numEly_l+1) + numEly_l*(numElx_l+1) + numElx_l*numEly_l;
-  long nel = numElx_l*numEly_l + 1;
+  long nel = numElx_l*numEly_l*2;
 
   std::cout << "expected entity counts: " << std::endl;
   std::cout << "  Vertices: " << nvert << std::endl;

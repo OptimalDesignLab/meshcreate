@@ -36,6 +36,15 @@ struct _VertIdx {
 
 typedef struct _VertIdx VertIdx;
 
+struct _Counts {
+  long numVert;
+  long numEdge;
+  long numFace;
+  long numEl;
+};
+
+typedef struct _Counts Counts;
+
 // addition on VertIdx
 VertIdx add(const VertIdx v1, const VertIdx v2);
 VertIdx add(const VertIdx v1, const int arr[3]);
@@ -151,7 +160,7 @@ void printVerts(apf::MeshEntity**** verts, Sizes sizes);
 
 void calcCentroid(apf::Mesh* m, apf::MeshEntity** verts,  double centroid[3]);
 
-void checkMesh(apf::Mesh* m);
+void checkMesh(apf::Mesh* m, Sizes sizes, Counts counts);
 
 void checkMeshFaces(apf::Mesh* m);
 
@@ -249,9 +258,26 @@ int main(int argc, char** argv)
   // TODO: fix this 
   long numElx_l = numElx;
   long numEly_l = numEly;
-  long nvert = (numElx_l+1)*(numEly_l+1);
-  long nedges = numElx_l*(numEly_l+1) + numEly_l*(numElx_l+1) + numElx_l*numEly_l;
-  long nel = numElx_l*numEly_l + 1;
+  long numElz_l = numElz;
+  long nvert = (numElx_l+1)*(numEly_l+1)*(numElz_l+1);
+  long nedges =  // cube edges
+                 numElx_l*(numEly_l+1)*(numElz_l+1)
+                + numEly_l*(numElx_l+1)*(numElz_l+1)
+                + numElz_l*(numElx_l+1)*(numEly_l+1) 
+                // cube face edges
+                + numElx_l*numElz_l*(numEly_l+1)
+                + numEly_l*numElz_l*(numElx_l+1)
+                + numElx_l*numEly_l*(numElz_l+1)
+                // cube interior
+                + numElz_l*numEly_l*numElz_l;
+  long nfaces = numElx_l*numEly_l*(numElz_l+1)*2
+                + numEly_l*numElz_l*(numElx_l+1)*2
+                + numElx_l*numElz_l*(numEly_l+1)*2
+                + numElx_l*numEly_l*numElz_l*6;
+
+  long nel = numElz_l*numEly_l*numElz_l*6;
+
+  Counts counts = {nvert, nedges, nfaces, nel};
 
   std::cout << "expected entity counts: " << std::endl;
   std::cout << "  Vertices: " << nvert << std::endl;
@@ -269,6 +295,12 @@ int main(int argc, char** argv)
     std::cerr << "Error: number of edges will overflow 32-bit integer" << std::endl;
     return 1;
   }
+
+  if (nfaces > INT_MAX)
+  {
+    std::cerr << "Error: number of faces will overflow 32-bit integer" << std::endl;
+  }
+
   if (nel > INT_MAX)
   {
     std::cerr << "Error: number of elements will overflow 32-bit integer" << std::endl;
@@ -410,7 +442,7 @@ int main(int argc, char** argv)
   m->acceptChanges();
   std::cout << "accepted changes" << std::endl;
   checkMeshFaces(m);
-//  checkMesh(m);
+  checkMesh(m, sizes, counts);
   m->verify();
   std::cout << "verified" << std::endl;
 
@@ -470,100 +502,271 @@ int main(int argc, char** argv)
   MPI_Finalize();
 }
 
-// check that the number of downward and upward adjacencies is correct
-void checkMesh(apf::Mesh* m)
+void checkMesh(apf::Mesh* m, Sizes sizes, Counts counts)
 {
-  // check verts -> edges
-  apf::MeshIterator* it = m->begin(0);
-  apf::MeshEntity* e;
-//  apf::Up ups;  // upward adjacencies
-  apf::Adjacent adj;  // multi level upward adjacencies
-  apf::Downward down;
-  int cnt = 0;  // current entity number
-  int cnt_i = 0;  // number of adjacent entities
+  int numElx = sizes.numElx;
+  int numEly = sizes.numEly;
+  int numElz = sizes.numElz;
 
+  int numVert = m->count(0);
+  int ret_stat = 0;
+  if ( numVert != counts.numVert)
+  {
+    std::cerr << "Number of vertices is incorrect: expected: ";
+    std::cerr << counts.numVert << ", got " << numVert << std::endl;
+    ret_stat += 1;
+  }
+
+  int numEdge = m->count(1);
+  if (numEdge != counts.numEdge)
+  {
+    std::cerr << "Number of edges is incorrect: expected: ";
+    std::cerr << counts.numEdge << ", got " << numEdge << std::endl;
+    ret_stat += 1;
+  }
+
+  int numFace = m->count(2);
+  if (numFace != counts.numFace)
+  {
+    std::cerr << "Number of faces is incorrect: expected: ";
+    std::cerr << counts.numFace << ", got " << numFace << std::endl;
+    ret_stat += 1;
+  }
+
+  int numEl = m->count(3);
+  if (numEl != counts.numEl)
+  {
+    std::cerr << "Number of edges is incorrect: expected: ";
+    std::cerr << counts.numEl << ", got " << numEl << std::endl;
+    ret_stat += 1;
+  }
+
+  // check classification
+  int classification[4][4];
+  for (int i=0; i < 4; ++i)
+    for (int j=0; j < 4; ++j)
+      classification[i][j] = 0;
+
+  apf::MeshEntity* e;
+  apf::ModelEntity* me;
+  int model_dim;
+  for (int dim=0; dim < 4; ++dim)
+  {
+    apf::MeshIterator* it = m->begin(dim);
+    while ( (e = m->iterate(it)) )
+    {
+      me = m->toModel(e);
+      model_dim = m->getModelType(me);
+      classification[dim][model_dim] = classification[dim][model_dim] + 1;
+    }
+  }
+
+  // calculate expected classification
+  int verts_on_verts = 8;
+  int verts_on_edges = (numElx -1)*4 + (numEly-1)*4 + (numElz-1)*4;
+  int verts_on_faces = (numElx-1)*(numElz-1)*2
+                       +  (numEly-1)*(numElz-1)*2
+                       + (numElx-1)*(numEly-1)*2;
+  int verts_on_regions = (numElx-1)*(numEly-1)*(numElz-1);
+
+  int edges_on_verts = 0;
+  int edges_on_edges = numElx*4 + numEly*4 + numElz*4;
+  int edges_on_faces = 2*(numElx*(numEly-1) + numEly*(numElx-1) + numElx*numEly)
+                     + 2*(numEly*(numElz-1) + numElz*(numEly-1) + numEly*numElz)
+                     + 2*(numElx*(numElz-1) + numElz*(numElx-1) + numElx*numElz)
+                     ;
+  int edges_on_regions = counts.numEdge - edges_on_verts - edges_on_edges
+                         - edges_on_faces;
+
+  int faces_on_verts = 0;
+  int faces_on_edges = 0;
+  int faces_on_faces = numElx*numEly*4 + numEly*numElz*4 + numElx*numElz*4;
+  int faces_on_regions = counts.numFace - faces_on_faces;
+
+  int regions_on_verts = 0;
+  int regions_on_edges = 0;
+  int regions_on_faces = 0;
+  int regions_on_regions = counts.numEl;
+
+  int expected_class[4][4] = { 
+    {verts_on_verts, verts_on_edges, verts_on_faces, verts_on_regions},
+    {edges_on_verts, edges_on_edges, edges_on_faces, edges_on_regions},
+    {faces_on_verts, faces_on_edges, faces_on_faces, faces_on_regions},
+    {regions_on_verts, regions_on_edges, regions_on_faces, regions_on_regions}
+  };
+
+  // check the total number of classified entities is correct
+  for (int dim=0; dim < 4; ++dim)
+    for (int class_dim=0; class_dim < 4; ++class_dim)
+    {
+      if (classification[dim][class_dim] !=  expected_class[dim][class_dim])
+      {
+        std::cerr << "Wrong number of dimension " << dim << " MeshEntities";
+        std::cerr << " classified on model dimension " << class_dim;
+        std::cerr << "expected: " << expected_class[dim][class_dim];
+        std::cerr << "got: " << classification[dim][class_dim] << std::endl;
+        ret_stat += 1;
+      }
+    }
+
+
+  // now check the right number of entities is classified on each edge and face
+  int edge0 = numElx-1;
+  int edge1 = numEly-1;
+  int edge2 = edge0;
+  int edge3 = edge1;
+  int edge4 = edge0;
+  int edge5 = edge1;
+  int edge6 = edge0;
+  int edge7 = edge1;
+  int edge8 = numElz-1;
+  int edge9 = edge8;
+  int edge10 = edge8;
+  int edge11 = edge8;
+
+  int expected_vert_edgeclass[] = {edge0, edge1, edge2, edge3, edge4, edge5, 
+                                   edge6, edge7, edge8, edge9, edge10, edge11};
+
+  int vert_edgeclass[12];
+  for (int i=0; i < 12; ++i)
+    vert_edgeclass[i] = 0;
+
+  apf::MeshIterator* it = m->begin(0);
+  int model_tag;
   while ( (e = m->iterate(it)) )
   {
-    // check verts -> edges
-    cnt_i = m->countUpward(e);
-    if (cnt_i < 2)
-    {
-      std::cerr << "vertex " << cnt << " has too few edges" << std::endl;
-    } else
-    {
-//      std::cout << "vertex -> edge pass " << std::endl;
-    }
-
-    // check vert -> face
-    m->getAdjacent(e, 2, adj);
-    if (adj.size() > 6)
-    {
-      std::cerr << "vertex " << cnt << " has too many faces" << std::endl;
-    } else
-    {
-//      std::cout << "vertex -> face pass " << std::endl;
-    }
-
-    ++cnt;
+    me = m->toModel(e);
+    model_dim = m->getModelType(me);
+    model_tag = m->getModelTag(me);
+    if (model_dim == 1)
+      vert_edgeclass[model_tag] = vert_edgeclass[model_tag] + 1;
   }
+
+  for (int i=0; i <12; ++i)
+  {
+    if (vert_edgeclass[i] != expected_vert_edgeclass[i])
+    {
+      std::cerr << "incorrect number of vertices classified on model edge";
+      std::cerr << i << ", expected: " << expected_vert_edgeclass[i];
+      std::cerr << ", got: " << vert_edgeclass[i] << std::endl;
+      ++ret_stat;
+    }
+  }
+
+
+
+  // edges on edges
+  edge0 = numElx;
+  edge1 = numEly;
+  edge2 = edge0;
+  edge3 = edge1;
+  edge4 = edge0;
+  edge5 = edge1;
+  edge6 = edge0;
+  edge7 = edge1;
+  edge8 = numElz;
+  edge9 = edge8;
+  edge10 = edge8;
+  edge11 = edge8;
+
+  int expected_edge_edgeclass[] = {edge0, edge1, edge2, edge3, edge4, edge5, 
+                                   edge6, edge7, edge8, edge9, edge10, edge11};
+
+  int edge_edgeclass[12];
+  for (int i=0; i < 12; ++i)
+    edge_edgeclass[i] = 0;
+
+  // edges on faces
+  int face0 = numElx*(numEly-1) + numEly*(numElx-1) + numElx*numEly;
+  int face1 = numElx*(numElz-1) + numElz*(numElx-1) + numElx*numElz;
+  int face2 = numElx*(numElz-1) + numElz*(numElx-1) + numElx*numElz;
+  int face3 = face1;
+  int face4 = face2;
+  int face5 = face0;
+
+  int expected_edge_faceclass[] = { face0, face1, face2, face3, face4, face5};
+  int edge_faceclass[6];
+  for (int i=0; i < 6; ++i)
+    edge_faceclass[i] = 0;
 
   it = m->begin(1);
-  cnt = 0;
-
   while ( (e = m->iterate(it)) )
   {
-    // check edge -> verts
-    cnt_i = m->getDownward(e, 0, down);
-    if ( cnt_i != 2)
+    me = m->toModel(e);
+    model_dim = m->getModelType(me);
+    model_tag = m->getModelTag(me);
+    if (model_dim == 1)
     {
-      std::cerr << "edge " << cnt << " has too few verts" << std::endl;
-    } else
+      edge_edgeclass[model_tag] = edge_edgeclass[model_tag] + 1;
+    } else if (model_dim == 2)
     {
-//      std::cout << "edge -> vert pass" << std::endl;
+      edge_faceclass[model_tag] = edge_faceclass[model_tag] + 1;
     }
-
-    // check edge -> face
-    m->getAdjacent(e, 2, adj);
-    if (adj.size() > 2)
-    {
-      std::cerr << "edge " << cnt << " has too many faces" << std::endl;
-    } else
-    {
-//      std::cout << "edge -> face pass" << std::endl;
-    }
-
-    ++cnt;
-
   }
+
+  for (int i=0; i < 12; ++i)
+  {
+    if (expected_edge_edgeclass[i] != edge_edgeclass[i])
+    {
+      std::cerr << "incorrect number of edges classified on model edge ";
+      std::cerr << i << ", expected: " << expected_edge_edgeclass[i];
+      std::cerr << ", got: " << edge_edgeclass[i] << std::endl;
+      ++ret_stat;
+    }
+  }
+
+  for (int i=0; i < 6; ++i)
+  {
+    if (expected_edge_faceclass[i] != edge_faceclass[i])
+    {
+      std::cerr << "incorrect number of edges classified on model face";
+      std::cerr << i << ", expected: " << expected_edge_faceclass[i];
+      std::cerr << ", got: " << edge_faceclass[i] << std::endl;
+      ++ret_stat;
+    }
+  }
+
+
+  // faces on faces
+  face0 = numElx*numEly*2;
+  face1 = numElx*numElz*2;
+  face2 = numEly*numElz*2;
+  face3 = face1;
+  face4 = face2;
+  face5 = face0;
+
+
+  int expected_face_faceclass[] = { face0, face1, face2, face3, face4, face5};
+  int face_faceclass[6];
+  for (int i=0; i < 6; ++i)
+    face_faceclass[i] = 0;
 
   it = m->begin(2);
-  cnt = 0;
-
   while ( (e = m->iterate(it)) )
   {
-    // check face -> edges
-    cnt_i = m->getDownward(e, 1, down);
-    if ( cnt_i != 3)
-    {
-      std::cerr << "face " << cnt << " has incorrect number of edges" << std::endl;
-    } else
-    {
-//      std::cout << "face -> edge pass" << std::endl;
-    }
-
-    // check face -> verts
-    cnt_i = m->getDownward(e, 0, down);
-    if (cnt_i != 3)
-    {
-      std::cerr << "face " << cnt << " has incorrect number of vertices" << std::endl;
-    } else
-    {
-//      std::cout << "face -> vert pass" << std::endl;
-    }
-
-    ++cnt;
+    me = m->toModel(e);
+    model_dim = m->getModelType(me);
+    model_tag = m->getModelTag(me);
+    if (model_dim == 2)
+      face_faceclass[model_tag] = face_faceclass[model_tag] + 1;
   }
 
+  for (int i=0; i < 6; ++i)
+  {
+    if ( expected_face_faceclass[i] != face_faceclass[i])
+    {
+      std::cerr << "incorrect number of faces classified on model face";
+      std::cerr << i << ", expected: " << expected_face_faceclass[i];
+      std::cerr << ", got: " << face_faceclass[i] << std::endl;
+      ++ret_stat;
+    }
+  }
+
+  if (ret_stat > 0)
+  {
+    std::cerr << "Error: " << ret_stat << " checkMesh tests failed" << std::endl;
+    abort();
+  }
 
 } // end function
 
