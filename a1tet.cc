@@ -814,13 +814,18 @@ if ( i == 0 && j == 0 && k == 0 )
 Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2, 
                            apf::MeshEntity* verts[2], Sizes sizes)
 {
+  std::cout << "getting edge classification" << std::endl;
   Geom _g1 = getVertClassification(_v1, sizes);
   Geom _g2 = getVertClassification(_v2, sizes);
   // sort by model dimension
   Geom g1, g2;
   VertIdx v1, v2;
-  if (_g1.model_dim > g2.model_dim)
+  std::cout << "_g1 dim, tag = " << _g1.model_dim << ", " << _g1.model_tag << std::endl;
+  std::cout << "_g2 dim, tag = " << _g2.model_dim << ", " << _g2.model_tag << std::endl;
+
+  if (_g1.model_dim > _g2.model_dim)
   {
+    std::cout << "reversing g1 and g2" << std::endl;
     g1 = _g2;
     g2 = _g1;
     v1 = _v2;
@@ -833,10 +838,13 @@ Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2,
     v2 = _v2;
   }
 
+  std::cout << "g1 dim, tag = " << g1.model_dim << ", " << g1.model_tag << std::endl;
+  std::cout << "g2 dim, tag = " << g2.model_dim << ", " << g2.model_tag << std::endl;
   int model_dim, model_tag;
 
   if (g1.model_dim == g2.model_dim && g1.model_tag != g2.model_tag)
   {
+    std::cout << "geometric dimensions are equal" << std::endl;
     if (g1.model_dim == 1) // edge-edge
     {
       // figure out which face it is
@@ -876,40 +884,34 @@ Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2,
 
   } else if ( g1.model_dim == 1 && g2.model_dim == 2)
   {
+    std::cout << "in edge classification special case" << std::endl;
     // check if face contains the edge
     // if yes, getMaxGeometry
     // if no, classify on region
-    int model_tag = g1.model_tag;
     int idx;
-    bool foundface = false;
-    for (int i=0; i < 6; ++i)  // check for a face containing the edge
+    idx = contains(face_edges[g2.model_tag], 4, g1.model_tag);
+    if (idx >= 0)
     {
-      idx = contains(face_edges[i], 4, model_tag);
-      if (idx >= 0)
-      {
-        foundface = true;
-        break;
-      }
-    }
-    if (foundface)
-    {
-      // because g1 and g2 are sorted, g2 is the maximum
+      std::cout << "found face" << std::endl;
       model_dim = g2.model_dim;
       model_tag = g2.model_tag;
     } else
     {
+      std::cout << "face not found, assuming region classification" << std::endl;
       model_dim = 3;
       model_tag = 0;
     }
 
   } else  // general case
   {
+    std::cout << "general case" << std::endl;
     Geom g_class[] = {g1, g2};
     Geom g = getMaxGeometry(m, g_class, 2);
     model_dim = g.model_dim;
     model_tag = g.model_tag;
   }
 
+  std::cout << "final edge classification: dim = " << model_dim << ", tag = " << model_tag << std::endl;
   Geom g = {model_tag, model_dim};
   return g;
 
