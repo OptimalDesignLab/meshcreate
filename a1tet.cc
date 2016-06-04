@@ -10,19 +10,8 @@
 #include <stdbool.h>
 #include <limits.h>
 //#include "funcs1.h"
-#include "apfSBPShape.h"
-#include "apfSBPShape3.h"
-
-// 3D array
-struct _Array3 {
-  apf::MeshEntity** ptr;
-  int m;
-  int n;
-  int p;
-};
-typedef struct _Array3 Array3;
- 
-
+//#include "apfSBPShape.h"
+//#include "apfSBPShape3.h"
 
 struct _Sizes {
   int numElx;
@@ -63,52 +52,6 @@ bool create_edge[NREAREDGES];  // whether or not to create the edge
 
 int rear_face_idx[6];  // indices of rear faces in the faces list
 bool create_face[6];  // whether or not to create the faces
-
-// 3D array functions
-//-----------------------------------------------------------------------------
-int getInd3(const int i, const int j, const int k, const int imax, const int jmax, const int kmax)
-{
-  return i + j*imax + imax*jmax*k;
-}
-
-apf::MeshEntity* getindex3(Array3 arr, const int i, const int j, const int k)
-{
- const int idx = getInd3(i, j, k, arr.m, arr.n, arr.p);
- return arr.ptr[idx];
-}
-
-apf::MeshEntity* getindex3(Array3 arr, VertIdx v)
-{
-  return getindex3(arr, v.i, v.j, v.k);
-}
-
-void setindex3(Array3 arr, const int i, const int j, const int k, 
-              apf::MeshEntity* val)
-{
- const int idx = getInd3(i, j, k, arr.m, arr.n, arr.p);
-// printf("setting arr %i %i %i = linear index %i to value %10.6f\n", i, j, k, idx, val);
- arr.ptr[idx] = val;
-}
-
-void setindex3(Array3 arr, VertIdx v,
-               apf::MeshEntity* val)
-{
-  setindex3(arr, v.i, v.j, v.k, val);
-}
-
-void zero3(Array3 arr)
-{
-  int len = arr.m*arr.n*arr.p;
-  for (int i = 0; i < len; ++i)
-  {
-    arr.ptr[i] = NULL;
-  }
-}
-
-//-----------------------------------------------------------------------------
-
-
-
 
 // declare the verts used to break the cube into tetrahedra
 void declareTets();
@@ -449,8 +392,8 @@ int main(int argc, char** argv)
 
  // for quadratic meshes
 //  apf::FieldShape* linear2 = apf::getSerendipity();
-    apf::FieldShape* linear2 = apf::getSBP3Shape(1);
-//  apf::FieldShape* linear2 = apf::getLagrange(2);
+//    apf::FieldShape* linear2 = apf::getSBP3Shape(1);
+  apf::FieldShape* linear2 = apf::getLagrange(1);
   apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
 
   std::cout << "changed mesh shape" << std::endl;
@@ -876,6 +819,9 @@ void extractEdges()
           if (nedges >= NEDGES)
             std::cerr << "  Warning: too many edges detected" << std::endl;
 
+          std::cout << "adding edge with j = " << j << ", k = " << k << std::endl;
+          std::cout << "cube verts = " << getVertNum(tets[i][j]) << ", " << getVertNum(tets[i][k]) << std::endl;
+
           copyArray(tets[i][j], edges[nedges][0]);
           copyArray(tets[i][k], edges[nedges][1]); 
           ++nedges;
@@ -1036,7 +982,7 @@ void extractFaces()
             if (nfaces >= NFACES)
               std::cerr << "Warning: too many faces detected" << std::endl;
 
-            std::cout << "adding face with tet v1 = " << v1 << ", v2 = " << v2 << ", v3 = " << v3 << std::endl;
+            std::cout << "adding face with tri v1 = " << v1 << ", v2 = " << v2 << ", v3 = " << v3 << std::endl;
             std::cout << "cube verts = " << getVertNum(tets[i][v1]) << ", " << getVertNum(tets[i][v2]) << ", " << getVertNum(tets[i][v3]) << std::endl;
             copyArray(tets[i][v1], faces[nfaces][0]); 
             copyArray(tets[i][v2], faces[nfaces][1]); 
@@ -1063,22 +1009,22 @@ void extractRearEdges()
 {
   int rear_edges[NREAREDGES][2][3] ={ 
     // edge on axes of the cube
+    { {0, 0, 0}, {0, 0, 1} },
     { {0, 0, 0}, {1, 0, 0} },
     { {0, 0, 0}, {0, 1, 0} },
-    { {0, 0, 0}, {0, 0, 1} },
   
-    // j = 0 edges
-    { {0, 0, 0}, {1, 0, 1} },
-    { {1, 0, 0}, {1, 0, 1} },
-    { {0, 0, 1}, {1, 0, 1} },
     // i = 0 edges
-    { {0, 0, 0}, {0, 1, 1} },
     { {0, 1, 0}, {0, 1, 1} },
     { {0, 0, 1}, {0, 1, 1} },
+    { {0, 0, 0}, {0, 1, 1} },
+    // j = 0 edges
+    { {1, 0, 0}, {1, 0, 1} },
+    { {0, 0, 1}, {1, 0, 1} },
+    { {0, 0, 0}, {1, 0, 1} },
     // k = 0 edges
-    { {0, 0, 0}, {1, 1, 0} },
     { {1, 0, 0}, {1, 1, 0} },
     { {0, 1, 0}, {1, 1, 0} },
+    { {0, 0, 0}, {1, 1, 0} },
   };
 
   for (int i = 0; i < NREAREDGES; ++i)
@@ -1108,19 +1054,19 @@ void identifyEdges(VertIdx start)
   const int j = start.j;
   const int k = start.k;
   // select which edges to create
-  if (j == 0 && k == 0)
+  if (i == 0 && j == 0)
     create_edge[0] = true;
-  if (i == 0 && k == 0)
+  if (j == 0 && k == 0)
     create_edge[1] = true;
-  if ( i == 0 && j == 0)
+  if ( i == 0 && k == 0)
     create_edge[2] = true;
-  if ( j == 0 )
+  if ( i == 0 )
   {
     create_edge[3] = true;
     create_edge[4] = true;
     create_edge[5] = true;
   }
-  if ( i == 0)
+  if ( j == 0)
   {
     create_edge[6] = true;
     create_edge[7] = true;
@@ -1207,7 +1153,7 @@ void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
     std::cout << "\nconsidering edge " << i << std::endl;
     idx = contains(rear_edge_idx, NREAREDGES, i);
 
-    if (idx > 0)  // if found
+    if (idx >= 0)  // if found
     {
       std::cout << "this is a rear edge" << std::endl;
       if (!create_edge[idx])
@@ -1238,6 +1184,13 @@ void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
 
 void createEdge(apf::Mesh2* m, apf::MeshEntity* edge_verts[2], apf::ModelEntity* model_entity) 
 {
+  std::cout << "creating edge with verts " << edge_verts[0];
+  std::cout << ", " << edge_verts[1] << std::endl;
+  apf::MeshEntity* existing = apf::findUpward(m, apf::Mesh::EDGE, edge_verts);
+  if (existing) {
+    std::cerr << "createEdge error: edge already exists!\n";
+    abort();
+  }
   m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
 
 }
@@ -1255,7 +1208,7 @@ void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
     std::cout << "\nconsidering face " << i << std::endl;
     idx = contains(rear_face_idx, 6, i);
 
-    if (idx > 0)  // if found
+    if (idx >= 0)  // if found
     {
       std::cout << "face is a rear face" << std::endl;
       if (!create_face[idx])
