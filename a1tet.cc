@@ -269,13 +269,13 @@ int main(int argc, char** argv)
                 + numEly_l*numElz_l*(numElx_l+1)
                 + numElx_l*numEly_l*(numElz_l+1)
                 // cube interior
-                + numElz_l*numEly_l*numElz_l;
+                + numElx_l*numEly_l*numElz_l;
   long nfaces = numElx_l*numEly_l*(numElz_l+1)*2
                 + numEly_l*numElz_l*(numElx_l+1)*2
                 + numElx_l*numElz_l*(numEly_l+1)*2
                 + numElx_l*numEly_l*numElz_l*6;
 
-  long nel = numElz_l*numEly_l*numElz_l*6;
+  long nel = numElx_l*numEly_l*numElz_l*6;
 
   Counts counts = {nvert, nedges, nfaces, nel};
 
@@ -536,7 +536,7 @@ void checkMesh(apf::Mesh* m, Sizes sizes, Counts counts)
   int numEl = m->count(3);
   if (numEl != counts.numEl)
   {
-    std::cerr << "Number of edges is incorrect: expected: ";
+    std::cerr << "Number of elements is incorrect: expected: ";
     std::cerr << counts.numEl << ", got " << numEl << std::endl;
     ret_stat += 1;
   }
@@ -603,8 +603,8 @@ void checkMesh(apf::Mesh* m, Sizes sizes, Counts counts)
       {
         std::cerr << "Wrong number of dimension " << dim << " MeshEntities";
         std::cerr << " classified on model dimension " << class_dim;
-        std::cerr << "expected: " << expected_class[dim][class_dim];
-        std::cerr << "got: " << classification[dim][class_dim] << std::endl;
+        std::cerr << ", expected: " << expected_class[dim][class_dim];
+        std::cerr << ", got: " << classification[dim][class_dim] << std::endl;
         ret_stat += 1;
       }
     }
@@ -679,7 +679,7 @@ void checkMesh(apf::Mesh* m, Sizes sizes, Counts counts)
   // edges on faces
   int face0 = numElx*(numEly-1) + numEly*(numElx-1) + numElx*numEly;
   int face1 = numElx*(numElz-1) + numElz*(numElx-1) + numElx*numElz;
-  int face2 = numElx*(numElz-1) + numElz*(numElx-1) + numElx*numElz;
+  int face2 = numEly*(numElz-1) + numElz*(numEly-1) + numEly*numElz;
   int face3 = face1;
   int face4 = face2;
   int face5 = face0;
@@ -719,7 +719,7 @@ void checkMesh(apf::Mesh* m, Sizes sizes, Counts counts)
   {
     if (expected_edge_faceclass[i] != edge_faceclass[i])
     {
-      std::cerr << "incorrect number of edges classified on model face";
+      std::cerr << "incorrect number of edges classified on model face ";
       std::cerr << i << ", expected: " << expected_edge_faceclass[i];
       std::cerr << ", got: " << edge_faceclass[i] << std::endl;
       ++ret_stat;
@@ -755,7 +755,7 @@ void checkMesh(apf::Mesh* m, Sizes sizes, Counts counts)
   {
     if ( expected_face_faceclass[i] != face_faceclass[i])
     {
-      std::cerr << "incorrect number of faces classified on model face";
+      std::cerr << "incorrect number of faces classified on model face ";
       std::cerr << i << ", expected: " << expected_face_faceclass[i];
       std::cerr << ", got: " << face_faceclass[i] << std::endl;
       ++ret_stat;
