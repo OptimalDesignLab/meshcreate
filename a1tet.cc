@@ -1654,6 +1654,7 @@ void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
 {
 //  std::cout << "\ncreating faces" << std::endl;
   int idx;
+  bool isrear;
   VertIdx vertidx;
   apf::MeshEntity* verts_i[3];
   apf::MeshEntity* edge_verts[2];
@@ -1664,10 +1665,10 @@ void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
   for (int i = 0; i < NFACES; ++i)
   {
 //    std::cout << "\nconsidering face " << i << std::endl;
-    idx = contains(rear_face_idx, 6, i);
-
-    if (idx >= 0)  // if found
+    isrear = contains_bool(rear_face_idx, 6, i);
+    if (isrear)  // if found
     {
+      idx = contains(rear_face_idx, 6, i);
 //      std::cout << "face is a rear face" << std::endl;
       if (!create_face[idx])
       {
