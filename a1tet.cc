@@ -1162,8 +1162,8 @@ Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2,
   } else if (g1.model_dim == 0 && g2.model_dim == 1)
   {
     // check if the vert is collinear with the edge
-    int idx = contains(vert_edges[g1.model_tag], 3, g2.model_tag);
-    if (idx >= 0)
+    bool idx = contains_bool(vert_edges[g1.model_tag], 3, g2.model_tag);
+    if (idx)
     {
       model_dim = g2.model_dim;
       model_tag = g2.model_tag;
