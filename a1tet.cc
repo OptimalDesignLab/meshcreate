@@ -1177,9 +1177,9 @@ Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2,
         {
           // check if this face contains both the edge an an edge that
           // the vert could belong to
-          int idx1 = contains(face_edges[face], 4, g2.model_tag);
-          int idx2 = contains(face_edges[face], 4, vert_edges[g1.model_tag][vert_edge]);
-          if (idx1 >= 0 && idx2 >= 0)
+          bool idx1 = contains_bool(face_edges[face], 4, g2.model_tag);
+          bool idx2 = contains_bool(face_edges[face], 4, vert_edges[g1.model_tag][vert_edge]);
+          if (idx1 && idx2)
           {
             model_dim = 2;
             model_tag = face;
