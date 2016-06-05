@@ -1201,9 +1201,9 @@ Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2,
     // check if face contains the edge
     // if yes, getMaxGeometry
     // if no, classify on region
-    int idx;
-    idx = contains(face_edges[g2.model_tag], 4, g1.model_tag);
-    if (idx >= 0)
+    bool idx;
+    idx = contains_bool(face_edges[g2.model_tag], 4, g1.model_tag);
+    if (idx)
     {
       model_dim = g2.model_dim;
       model_tag = g2.model_tag;
