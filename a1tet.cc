@@ -461,7 +461,7 @@ int main(int argc, char** argv)
     {
       for (int i = 0; i < numElx; ++i)
       {
-        std::cout << "\ncreating element " << i << ", " << j << ", " << k << std::endl;
+//        std::cout << "\ncreating element " << i << ", " << j << ", " << k << std::endl;
   //      int el_num = i + numElx*j;
   //      std::cout << "creating element i = " << i << " , j = " << j << std::endl;
         start.i = i; start.j = j; start.k = k;
@@ -1088,27 +1088,28 @@ Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2,
     v1 = _v1;
     v2 = _v2;
   }
+/*
   std::cout << "g1 dim, tag = " << g1.model_dim << ", " << g1.model_tag << std::endl;
   std::cout << "g2 dim, tag = " << g2.model_dim << ", " << g2.model_tag << std::endl;
   std::cout << "v1 idx = " << v1.i << ", " << v1.j << ", " << v1.k << std::endl;
   std::cout << "v2 idx = " << v2.i << ", " << v2.j << ", " << v2.k << std::endl;
-
+*/
 
   int model_dim = -1;
   int model_tag = -1;
 
   if (g1.model_dim == g2.model_dim && g1.model_tag != g2.model_tag)
   {
-    std::cout << "same dimension different tag" << std::endl;
+//    std::cout << "same dimension different tag" << std::endl;
     if (g1.model_dim == 0) // vert-vert
     {
-      std::cout << "vert-vert" << std::endl;
+//      std::cout << "vert-vert" << std::endl;
       model_dim = vert_only_classification[g1.model_tag][g2.model_tag][0];
       model_tag = vert_only_classification[g1.model_tag][g2.model_tag][1];
       
     } else if (g1.model_dim == 1) // edge-edge
     {
-      std::cout << "edge-edge" << std::endl;
+//      std::cout << "edge-edge" << std::endl;
       // figure out which face it is
       bool foundface = false;
       int idx1, idx2;
@@ -1118,7 +1119,7 @@ Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2,
         idx2 = contains(face_edges[i], 4, g2.model_tag);
         if (idx1 >= 0 && idx2 >= 0)
         {
-          std::cout << "found face " << i << std::endl;
+//          std::cout << "found face " << i << std::endl;
           model_dim = 2;
           model_tag = i;
           foundface = true;
@@ -1212,14 +1213,14 @@ Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2,
 
   } else  // general case
   {
-    std::cout << "general case " << std::endl;
+//    std::cout << "general case " << std::endl;
     Geom g_class[] = {g1, g2};
     Geom g = getMaxGeometry(m, g_class, 2);
     model_dim = g.model_dim;
     model_tag = g.model_tag;
   }
 
-  std::cout << "model_tag = " << model_tag << ", model_dim = " << model_dim << std::endl;
+//  std::cout << "model_tag = " << model_tag << ", model_dim = " << model_dim << std::endl;
   Geom g = {model_tag, model_dim};
   return g;
 
@@ -1584,8 +1585,8 @@ void identifyFaces(VertIdx start)
 // TODO: need Mesh*, need sizes
 void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** verts)
 {
-  std::cout << "\ncreating edges" << std::endl;
-  std::cout << "start idx = " << start.i << ", " << start.j << ", " << start.k << std::endl;
+//  std::cout << "\ncreating edges" << std::endl;
+//  std::cout << "start idx = " << start.i << ", " << start.j << ", " << start.k << std::endl;
   int idx;
   VertIdx v1, v2, vertidx;
   apf::MeshEntity* verts_i[2];
@@ -1593,20 +1594,20 @@ void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
   apf::ModelEntity* model_entity;
   for (int i = 0; i < NEDGES; ++i)
   {
-    std::cout << "\nconsidering edge " << i << std::endl;
+//    std::cout << "\nconsidering edge " << i << std::endl;
     idx = contains(rear_edge_idx, NREAREDGES, i);
 
     if (idx >= 0)  // if found
     {
-      std::cout << "this is a rear edge" << std::endl;
+//      std::cout << "this is a rear edge" << std::endl;
       if (!create_edge[idx])
       {
-        std::cout << "skipping this edge" << std::endl;
+//        std::cout << "skipping this edge" << std::endl;
         continue;
       }
     }
 
-    std::cout << "creating edge" << std::endl;
+//    std::cout << "creating edge" << std::endl;
 
     // if we get here, we should create the edge
     add(start, edges[i][0], v1);
@@ -1647,38 +1648,38 @@ int tri_edges[3][2] = { {0, 1}, {1, 2}, {0, 2} };
 
 void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** verts)
 {
-  std::cout << "\ncreating faces" << std::endl;
+//  std::cout << "\ncreating faces" << std::endl;
   int idx;
   VertIdx vertidx;
   apf::MeshEntity* verts_i[3];
   apf::MeshEntity* edge_verts[2];
   Geom g_class[3]; // geometric classification of the vertices
   Geom g;  // geometric classification of the face
-  double centroid[3];
+//  double centroid[3];
   apf::ModelEntity* model_entity;
   for (int i = 0; i < NFACES; ++i)
   {
-    std::cout << "\nconsidering face " << i << std::endl;
+//    std::cout << "\nconsidering face " << i << std::endl;
     idx = contains(rear_face_idx, 6, i);
 
     if (idx >= 0)  // if found
     {
-      std::cout << "face is a rear face" << std::endl;
+//      std::cout << "face is a rear face" << std::endl;
       if (!create_face[idx])
       {
-        std::cout << "not creating face" << std::endl;
+//        std::cout << "not creating face" << std::endl;
         continue;
       }
     }
-    std::cout << "creating face " << std::endl;
+//    std::cout << "creating face " << std::endl;
     // if we get here, we should create the face
     for (int j=0; j < 3; ++j)
     {
       add(start, faces[i][j], vertidx);
 //      vertidx = add(start, faces[i][j]);
       verts_i[j] = getVert(vertidx, verts);
-      std::cout << "vert " << j << " idx " << vertidx.i << ", " << vertidx.j;
-      std::cout << ", " << vertidx.k << std::endl;
+//      std::cout << "vert " << j << " idx " << vertidx.i << ", " << vertidx.j;
+//      std::cout << ", " << vertidx.k << std::endl;
     }
 
     for (int j=0; j < 3; ++ j)
@@ -1686,19 +1687,21 @@ void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
       edge_verts[0] = verts_i[tri_edges[j][0]];
       edge_verts[1] = verts_i[tri_edges[j][1]];
       g_class[j] = getEdgeClassification(m, edge_verts);
-      std::cout << "edge " << j << " dim, tag = " << g_class[j].model_dim;
-      std::cout << ", " << g_class[j].model_tag << std::endl;
+//      std::cout << "edge " << j << " dim, tag = " << g_class[j].model_dim;
+//      std::cout << ", " << g_class[j].model_tag << std::endl;
     }
 
-    calcCentroid(m, verts_i, centroid);
-    std::cout << "creating face with centroid = " << centroid[0];
-    std::cout << ", " << centroid[1] << ", " << centroid[2] << std::endl;
+//    calcCentroid(m, verts_i, centroid);
+//    std::cout << "creating face with centroid = " << centroid[0];
+//    std::cout << ", " << centroid[1] << ", " << centroid[2] << std::endl;
 
     g = getMaxGeometry(m, g_class, 3);
+/*
     if (g.model_dim < 2)
     {
       std::cout << "Warning: classifying face on model dim " << g.model_dim << std::endl;
     }
+*/
     model_entity = getModelEntity(m, g);
     createFace(m, verts_i, model_entity);
   }  
