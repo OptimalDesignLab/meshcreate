@@ -1590,6 +1590,7 @@ void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
 //  std::cout << "\ncreating edges" << std::endl;
 //  std::cout << "start idx = " << start.i << ", " << start.j << ", " << start.k << std::endl;
   int idx;
+  bool isrear;
   VertIdx v1, v2, vertidx;
   apf::MeshEntity* verts_i[2];
   Geom g; // geometric classification of the edge
@@ -1597,10 +1598,11 @@ void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
   for (int i = 0; i < NEDGES; ++i)
   {
 //    std::cout << "\nconsidering edge " << i << std::endl;
-    idx = contains(rear_edge_idx, NREAREDGES, i);
-
-    if (idx >= 0)  // if found
+    isrear = contains_bool(rear_edge_idx, NREAREDGES, i);
+    if (isrear)  // if found
     {
+
+      idx = contains(rear_edge_idx, NREAREDGES, i);
 //      std::cout << "this is a rear edge" << std::endl;
       if (!create_edge[idx])
       {
