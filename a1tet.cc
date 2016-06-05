@@ -9,6 +9,9 @@
 #include <iostream>
 #include <stdbool.h>
 #include <limits.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+
 //#include "funcs1.h"
 //#include "apfSBPShape.h"
 //#include "apfSBPShape3.h"
@@ -157,6 +160,9 @@ int contains(const int vals[], const int len, int  val);
 
 // print the verts array
 void printVerts(apf::MeshEntity**** verts, Sizes sizes);
+
+// get time with microsecond precision
+double get_time();
 
 void calcCentroid(apf::Mesh* m, apf::MeshEntity** verts,  double centroid[3]);
 
@@ -330,7 +336,7 @@ int main(int argc, char** argv)
   double pert_fac = 10*M_PI;
   double pert_mag = 0.1;
 
-  std::cout << "SIZE_MAX = " << SIZE_MAX << std::endl;
+//  std::cout << "SIZE_MAX = " << SIZE_MAX << std::endl;
   std::cout << "about to allocate memory" << std::endl;
   apf::MeshEntity**** vertices = (apf::MeshEntity****) calloc(numElx+1, sizeof(apf::MeshEntity***));
   for (int i = 0; i < (numElx+1); ++i)
@@ -350,29 +356,29 @@ int main(int argc, char** argv)
   apf::ModelEntity* model_entity;  // the model entity itself
 
 
-  std::cout << "Creating " << numElx << " by " << numEly << "by " << numElz; 
+  std::cout << "Creating " << numElx << " by " << numEly << " by " << numElz; 
   std::cout << " mesh" << std::endl;
 
   // create all vertices
+  double t_vert_start = get_time();
   for (int k = 0; k < (numElz+1); ++k)
   {
     for (int j = 0; j < (numEly+1); ++j)  // loop up columns (bottom to top)
     {
       for (int i = 0; i < (numElx+1); ++i) // loop over rows (left to right)
       {
-         std::cout << "creating point at x = " << x_inner << " , y = " << y_inner << " , z = " << z_inner << std::endl;
+//         std::cout << "creating point at x = " << x_inner << " , y = " << y_inner << " , z = " << z_inner << std::endl;
          coords_i[0] = x_inner;
          coords_i[1] = y_inner;
          coords_i[2] = z_inner;
 
          geo = getVertClassification(i, j, k, sizes);
-         std::cout << "model_dim = " << geo.model_dim << std::endl;
-         std::cout << "model_tag = " << geo.model_tag << std::endl;
+//         std::cout << "model_dim = " << geo.model_dim << std::endl;
+//         std::cout << "model_tag = " << geo.model_tag << std::endl;
          model_entity = m->findModelEntity(geo.model_dim, geo.model_tag);
-         std::cout << "model entity = " << model_entity << std::endl;
+//         std::cout << "model entity = " << model_entity << std::endl;
            
          vertices[i][j][k] = m->createVert(model_entity);
-         std::cout << "vertex = " << vertices[i][j][k] << std::endl;
          m->setPoint(vertices[i][j][k], 0, coords_i);
          x_inner = x_inner + x_spacing + pert_mag*sin(apply_pert*pert_fac*x_inner);
          y_inner = y_i + pert_mag*sin(apply_pert*pert_fac*x_inner);
@@ -396,9 +402,11 @@ int main(int argc, char** argv)
 
   }
 
-  printVerts(vertices, sizes);
-  RegionCallback cb;
-  cb.m_closure = m;
+  double vert_telapsed = get_time() - t_vert_start;
+  std::cout << "created vertices in " << vert_telapsed << " seconds" << std::endl;
+//  printVerts(vertices, sizes);
+//  RegionCallback cb;
+//  cb.m_closure = m;
   // classify all MeshEntities on geometric face
   int model_dim = 3;
   int model_tag = 0;
@@ -406,13 +414,14 @@ int main(int argc, char** argv)
   VertIdx start;
   apf::MeshEntity* vertices_i[4];  // hold vertices for a particular element
   // build element from verticies
+  double t_el_start = get_time();
   for (int k = 0; k < numElz; ++k)
   {
     for (int j = 0; j < numEly; ++j)
     {
       for (int i = 0; i < numElx; ++i)
       {
-        std::cout << "\ncreating element " << i << ", " << j << ", " << k << std::endl;
+//        std::cout << "\ncreating element " << i << ", " << j << ", " << k << std::endl;
   //      int el_num = i + numElx*j;
   //      std::cout << "creating element i = " << i << " , j = " << j << std::endl;
         start.i = i; start.j = j; start.k = k;
@@ -423,9 +432,8 @@ int main(int argc, char** argv)
 
         for (int v = 0; v < 6; ++v)
         {
-          std::cout << "\ncreating tet " << v << std::endl;
           getTetVerts(start, tets[v], vertices, vertices_i);
-          apf::buildElement(m, model_entity, apf::Mesh::TET, vertices_i, &cb);
+          apf::buildElement(m, model_entity, apf::Mesh::TET, vertices_i);
         }
 
 
@@ -433,19 +441,23 @@ int main(int argc, char** argv)
     }
   }
 
+  double el_telapsed = get_time() - t_el_start;
+  std::cout << "created all elements in " << el_telapsed << " seconds " << std::endl;
   // build, verify  mesh
 /*
   std::cout << "deriving model" << std::endl;
   apf::deriveMdsModel(m);
   std::cout << "finished deriving model" << std::endl;
 */
+  double t_verify_start = get_time();
   m->acceptChanges();
   std::cout << "accepted changes" << std::endl;
   checkMeshFaces(m);
   checkMesh(m, sizes, counts);
   m->verify();
   std::cout << "verified" << std::endl;
-
+  double verify_telapsed = get_time() - t_verify_start;
+  std::cout << "total verification time: " << verify_telapsed << " seconds" << std::endl;
  // for quadratic meshes
 //  apf::FieldShape* linear2 = apf::getSerendipity();
 //    apf::FieldShape* linear2 = apf::getSBP3Shape(1);
@@ -1017,18 +1029,14 @@ if ( i == 0 && j == 0 && k == 0 )
 Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2, 
                            apf::MeshEntity* verts[2], Sizes sizes)
 {
-  std::cout << "getting edge classification" << std::endl;
   Geom _g1 = getVertClassification(_v1, sizes);
   Geom _g2 = getVertClassification(_v2, sizes);
   // sort by model dimension
   Geom g1, g2;
   VertIdx v1, v2;
-  std::cout << "_g1 dim, tag = " << _g1.model_dim << ", " << _g1.model_tag << std::endl;
-  std::cout << "_g2 dim, tag = " << _g2.model_dim << ", " << _g2.model_tag << std::endl;
 
   if (_g1.model_dim > _g2.model_dim)
   {
-    std::cout << "reversing g1 and g2" << std::endl;
     g1 = _g2;
     g2 = _g1;
     v1 = _v2;
@@ -1041,25 +1049,24 @@ Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2,
     v2 = _v2;
   }
 
-  std::cout << "g1 dim, tag = " << g1.model_dim << ", " << g1.model_tag << std::endl;
-  std::cout << "g2 dim, tag = " << g2.model_dim << ", " << g2.model_tag << std::endl;
-  int model_dim, model_tag;
+  int model_dim = -1;
+  int model_tag = -1;
 
   if (g1.model_dim == g2.model_dim && g1.model_tag != g2.model_tag)
   {
-    std::cout << "geometric dimensions are equal" << std::endl;
     if (g1.model_dim == 1) // edge-edge
     {
       // figure out which face it is
       bool foundface;
-      int idx1, idx2, face;
+      int idx1, idx2;
       for (int i=0; i < 6; ++i)
       {
         idx1 = contains(face_edges[i], 4, g1.model_tag);
         idx2 = contains(face_edges[i], 4, g2.model_tag);
         if (idx1 >= 0 && idx2 >= 0)
         {
-          face = i;
+          model_dim = 2;
+          model_tag = i;
           foundface = true;
           break;
         }
@@ -1070,9 +1077,6 @@ Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2,
         std::cerr << "error identifying face of 2 edges" << std::endl;
         abort();
       }
-
-      model_dim = 2;
-      model_tag = face;
 
     } else if (g1.model_dim == 2) // face-face
     {
@@ -1087,7 +1091,6 @@ Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2,
 
   } else if ( g1.model_dim == 1 && g2.model_dim == 2)
   {
-    std::cout << "in edge classification special case" << std::endl;
     // check if face contains the edge
     // if yes, getMaxGeometry
     // if no, classify on region
@@ -1095,26 +1098,22 @@ Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2,
     idx = contains(face_edges[g2.model_tag], 4, g1.model_tag);
     if (idx >= 0)
     {
-      std::cout << "found face" << std::endl;
       model_dim = g2.model_dim;
       model_tag = g2.model_tag;
     } else
     {
-      std::cout << "face not found, assuming region classification" << std::endl;
       model_dim = 3;
       model_tag = 0;
     }
 
   } else  // general case
   {
-    std::cout << "general case" << std::endl;
     Geom g_class[] = {g1, g2};
     Geom g = getMaxGeometry(m, g_class, 2);
     model_dim = g.model_dim;
     model_tag = g.model_tag;
   }
 
-  std::cout << "final edge classification: dim = " << model_dim << ", tag = " << model_tag << std::endl;
   Geom g = {model_tag, model_dim};
   return g;
 
@@ -1166,9 +1165,6 @@ void extractEdges()
         {
           if (nedges >= NEDGES)
             std::cerr << "  Warning: too many edges detected" << std::endl;
-
-          std::cout << "adding edge with j = " << j << ", k = " << k << std::endl;
-          std::cout << "cube verts = " << getVertNum(tets[i][j]) << ", " << getVertNum(tets[i][k]) << std::endl;
 
           copyArray(tets[i][j], edges[nedges][0]);
           copyArray(tets[i][k], edges[nedges][1]); 
@@ -1277,7 +1273,7 @@ int findFace(int face[3][3])
 // vertex (in either position)
 bool contains(int list_entry[][3], const int dim1, int vert1[3])
 {
-  bool matched;
+  bool matched = true;
   for (int i = 0; i < dim1; ++i)
   {
 
@@ -1317,7 +1313,6 @@ void extractFaces()
   int nfaces = 0;
   for (int i=0; i < NTETS; ++i)
   {
-    std::cout << "\nconsidering tet " << i << std::endl;
     for (int v1=0; v1 < 4; ++v1)
     {
       for (int v2=(v1+1); v2 < 4; ++v2)
@@ -1330,8 +1325,6 @@ void extractFaces()
             if (nfaces >= NFACES)
               std::cerr << "Warning: too many faces detected" << std::endl;
 
-            std::cout << "adding face with tri v1 = " << v1 << ", v2 = " << v2 << ", v3 = " << v3 << std::endl;
-            std::cout << "cube verts = " << getVertNum(tets[i][v1]) << ", " << getVertNum(tets[i][v2]) << ", " << getVertNum(tets[i][v3]) << std::endl;
             copyArray(tets[i][v1], faces[nfaces][0]); 
             copyArray(tets[i][v2], faces[nfaces][1]); 
             copyArray(tets[i][v3], faces[nfaces][2]); 
@@ -1384,8 +1377,6 @@ void extractRearEdges()
       std::cerr << "rear edge " << i << " not found" << std::endl;
       throw i;
     }
-    std::cout << "rear edge " << i << " idx = " << rear_edge_idx[i] << std::endl;
-
   }
 }
 
@@ -1454,8 +1445,6 @@ void extractRearFaces()
       std::cerr << "rear face " << i << " not found" << std::endl;
       throw i;
     }
-
-    std::cout << "rear face " << i << " idx = " << rear_face_idx[i] << std::endl;
   }
 }
 
@@ -1489,8 +1478,8 @@ void identifyFaces(VertIdx start)
 // TODO: need Mesh*, need sizes
 void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** verts)
 {
-  std::cout << "\ncreating edges" << std::endl;
-  std::cout << "start idx = " << start.i << ", " << start.j << ", " << start.k << std::endl;
+//  std::cout << "\ncreating edges" << std::endl;
+//  std::cout << "start idx = " << start.i << ", " << start.j << ", " << start.k << std::endl;
   int idx;
   VertIdx v1, v2, vertidx;
   apf::MeshEntity* verts_i[2];
@@ -1498,32 +1487,29 @@ void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
   apf::ModelEntity* model_entity;
   for (int i = 0; i < NEDGES; ++i)
   {
-    std::cout << "\nconsidering edge " << i << std::endl;
+//    std::cout << "\nconsidering edge " << i << std::endl;
     idx = contains(rear_edge_idx, NREAREDGES, i);
 
     if (idx >= 0)  // if found
     {
-      std::cout << "this is a rear edge" << std::endl;
+//      std::cout << "this is a rear edge" << std::endl;
       if (!create_edge[idx])
       {
-        std::cout << "skipping this edge" << std::endl;
+//        std::cout << "skipping this edge" << std::endl;
         continue;
       }
     }
 
-    std::cout << "creating edge" << std::endl;
+//    std::cout << "creating edge" << std::endl;
 
+    // if we get here, we should create the edge
     v1 = add(start, edges[i][0]);
     v2 = add(start, edges[i][1]);
 
-    // if we get here, we should create the edge
     for (int j=0; j < 2; ++j)
     {
       vertidx = add(start, edges[i][j]);
-
-      std::cout << "vert idx = " << vertidx.i << ", " << vertidx.j << ", " << vertidx.k << std::endl;
       verts_i[j] = getVert(vertidx, verts);
-      std::cout << "vert " << j << " = " << verts_i[j] << std::endl;
     }
 
     g = getEdgeClassification(m, v1, v2, verts_i, sizes);
@@ -1537,13 +1523,13 @@ void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
 
 void createEdge(apf::Mesh2* m, apf::MeshEntity* edge_verts[2], apf::ModelEntity* model_entity) 
 {
-  std::cout << "creating edge with verts " << edge_verts[0];
-  std::cout << ", " << edge_verts[1] << std::endl;
+  /*
   apf::MeshEntity* existing = apf::findUpward(m, apf::Mesh::EDGE, edge_verts);
   if (existing) {
     std::cerr << "createEdge error: edge already exists!\n";
     abort();
   }
+  */
   m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
 
 }
@@ -1552,7 +1538,7 @@ int tri_edges[3][2] = { {0, 1}, {1, 2}, {0, 2} };
 
 void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** verts)
 {
-  std::cout << "\ncreating faces" << std::endl;
+//  std::cout << "\ncreating faces" << std::endl;
   int idx;
   VertIdx vertidx;
   apf::MeshEntity* verts_i[3];
@@ -1562,27 +1548,25 @@ void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
   apf::ModelEntity* model_entity;
   for (int i = 0; i < NFACES; ++i)
   {
-    std::cout << "\nconsidering face " << i << std::endl;
+//    std::cout << "\nconsidering face " << i << std::endl;
     idx = contains(rear_face_idx, 6, i);
 
     if (idx >= 0)  // if found
     {
-      std::cout << "face is a rear face" << std::endl;
+//      std::cout << "face is a rear face" << std::endl;
       if (!create_face[idx])
       {
-        std::cout << "not creating face" << std::endl;
+//        std::cout << "not creating face" << std::endl;
         continue;
       }
     }
-    std::cout << "creating face " << std::endl;
+//    std::cout << "creating face " << std::endl;
     // if we get here, we should create the face
     for (int j=0; j < 3; ++j)
     {
 
       vertidx = add(start, faces[i][j]);
-      std::cout << "vert idx = " << vertidx.i << ", " << vertidx.j << ", " << vertidx.k << std::endl;
       verts_i[j] = getVert(vertidx, verts);
-      std::cout << "vert " << j << " = " << verts_i[j] << std::endl;
     }
 
     for (int j=0; j < 3; ++ j)
@@ -1590,23 +1574,18 @@ void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
       edge_verts[0] = verts_i[tri_edges[j][0]];
       edge_verts[1] = verts_i[tri_edges[j][1]];
       g_class[j] = getEdgeClassification(m, edge_verts);
-      std::cout << "edge " << j << " is classified on model dim " << g_class[j].model_dim;
-      std::cout << ", model tag " << g_class[j].model_tag << std::endl;
     }
-    std::cout << "finished getting geometric classification" << std::endl;
 
     g = getMaxGeometry(m, g_class, 3);
     model_entity = getModelEntity(m, g);
-    std::cout << "model_entity = " << model_entity << std::endl;
-    std::cout << "creating face" << std::endl;
     createFace(m, verts_i, model_entity);
-    std::cout << "finished creating face" << std::endl;
   }  
 
 }
 
 void createFace(apf::Mesh2* m, apf::MeshEntity* face_verts[3], apf::ModelEntity* model_entity) 
 {
+/*
   double centroid[3];
   calcCentroid(m, face_verts, centroid);
 
@@ -1615,13 +1594,15 @@ void createFace(apf::Mesh2* m, apf::MeshEntity* face_verts[3], apf::ModelEntity*
   std::cout << "model entity = " << model_entity << std::endl;
   std::cout << "centroid = " << centroid[0] << ", " << centroid[1] << ", ";
   std::cout << centroid[2] << std::endl;
+*/
+/*
   apf::MeshEntity* e;
   FaceCallback cb;
   cb.m_closure = m;
-  e = apf::buildElement(m, model_entity, apf::Mesh::TRIANGLE, face_verts, &cb);
+*/
+  apf::buildElement(m, model_entity, apf::Mesh::TRIANGLE, face_verts);
 
-  model_entity = m->toModel(e);
-  std::cout << "after creation, model_entity = " << model_entity << std::endl;
+//  model_entity = m->toModel(e);
 }
 
 
@@ -1671,11 +1652,8 @@ apf::ModelEntity* getModelEntity(apf::Mesh* m, Geom g_class)
 {
   int max_dim = g_class.model_dim;
   int min_tag = g_class.model_tag;
-  std::cout << "model_dim = " << max_dim << std::endl;
-  std::cout << "model_tag = " << min_tag << std::endl;
   // max_dim and min_tag now fully describe the geometric entity
   apf::ModelEntity* me = m->findModelEntity(max_dim, min_tag);
-  std::cout << "model entity = " << me << std::endl;
   return me;
 }
 
@@ -1694,7 +1672,6 @@ void getTetVerts(VertIdx start, int tet[4][3], apf::MeshEntity**** verts_all,  a
   for (int i=0; i < 4; ++i)
   {
     pos = add(start, tet[i]);
-    std::cout << "tet vert " << i << " idx = " << pos.i << ", " << pos.j << ", " << pos.k << std::endl;
     verts[i] = getVert(pos, verts_all);
   }
 }
@@ -1767,4 +1744,11 @@ void printVerts(apf::MeshEntity**** verts, Sizes sizes)
       {
         std::cout << "vert[" << i << "][" << j << "][" << k << "] = " << verts[i][j][k] << std::endl;
       }
+}
+
+double get_time()
+{
+  struct timeval t;
+  gettimeofday(&t, NULL);
+  return t.tv_sec + t.tv_usec*1e-6;
 }
