@@ -51,7 +51,7 @@ typedef struct _Counts Counts;
 // addition on VertIdx
 VertIdx add(const VertIdx v1, const VertIdx v2);
 VertIdx add(const VertIdx v1, const int arr[3]);
-
+void add(const VertIdx v1, const int arr[3], VertIdx &vout);
 #define NTETS 6
 #define NEDGES 19
 #define NFACES 18
@@ -1503,12 +1503,15 @@ void createEdges(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
 //    std::cout << "creating edge" << std::endl;
 
     // if we get here, we should create the edge
-    v1 = add(start, edges[i][0]);
-    v2 = add(start, edges[i][1]);
+    add(start, edges[i][0], v1);
+    add(start, edges[i][1], v2);
+//    v1 = add(start, edges[i][0]);
+//    v2 = add(start, edges[i][1]);
 
     for (int j=0; j < 2; ++j)
     {
-      vertidx = add(start, edges[i][j]);
+//      vertidx = add(start, edges[i][j]);
+      add(start, edges[i][j], vertidx);
       verts_i[j] = getVert(vertidx, verts);
     }
 
@@ -1564,8 +1567,8 @@ void createFaces(apf::Mesh2* m, Sizes sizes, VertIdx start, apf::MeshEntity**** 
     // if we get here, we should create the face
     for (int j=0; j < 3; ++j)
     {
-
-      vertidx = add(start, faces[i][j]);
+      add(start, faces[i][j], vertidx);
+//      vertidx = add(start, faces[i][j]);
       verts_i[j] = getVert(vertidx, verts);
     }
 
@@ -1671,7 +1674,8 @@ void getTetVerts(VertIdx start, int tet[4][3], apf::MeshEntity**** verts_all,  a
   VertIdx pos;
   for (int i=0; i < 4; ++i)
   {
-    pos = add(start, tet[i]);
+    add(start, tet[i], pos);
+//    pos = add(start, tet[i]);
     verts[i] = getVert(pos, verts_all);
   }
 }
@@ -1729,6 +1733,13 @@ VertIdx add(const VertIdx v1, const int arr[3])
 {
   VertIdx result = {v1.i + arr[0], v1.j + arr[1], + v1.k + arr[2]};
   return result;
+}
+
+void add(const VertIdx v1, const int arr[3], VertIdx &vout)
+{
+  vout.i = v1.i + arr[0];
+  vout.j = v1.j + arr[1];
+  vout.k = v1.k + arr[2];
 }
 
 bool isequal(Geom g1, Geom g2)
