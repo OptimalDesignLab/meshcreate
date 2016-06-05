@@ -1114,12 +1114,12 @@ Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2,
 //      std::cout << "edge-edge" << std::endl;
       // figure out which face it is
       bool foundface = false;
-      int idx1, idx2;
+      bool idx1, idx2;
       for (int i=0; i < 6; ++i)
       {
-        idx1 = contains(face_edges[i], 4, g1.model_tag);
-        idx2 = contains(face_edges[i], 4, g2.model_tag);
-        if (idx1 >= 0 && idx2 >= 0)
+        idx1 = contains_bool(face_edges[i], 4, g1.model_tag);
+        idx2 = contains_bool(face_edges[i], 4, g2.model_tag);
+        if (idx1 && idx2)
         {
 //          std::cout << "found face " << i << std::endl;
           model_dim = 2;
