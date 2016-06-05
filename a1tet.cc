@@ -196,7 +196,9 @@ void printEdges(int nedges);
 int getVertNum(int vert[3]);
 
 // find index of entry in array
-int contains(const int vals[], const int len, int  val);
+int contains(const int vals[], const int len, const int val);
+
+bool contains_bool(const int vals[], const int len, const int val);
 
 // print the verts array
 void printVerts(apf::MeshEntity**** verts, Sizes sizes);
@@ -1830,7 +1832,7 @@ int getVertNum(int vert[3])
   return vert[0] + 2*vert[1] + 4*vert[2];
 }
 
-int contains(const int vals[], const int len, int  val)
+int contains(const int vals[], const int len, const int val)
 {
   int idx = -1;
   for (int i = 0; i < len; ++i)
@@ -1844,6 +1846,22 @@ int contains(const int vals[], const int len, int  val)
 
   return idx;
 }
+
+bool contains_bool(const int vals[], const int len, const int val)
+{
+  bool found = false;
+  for (int i = 0; i < len; ++i)
+  {
+    if (vals[i] == val)
+    {
+      found = true;
+      break;
+    }
+  }
+
+  return found;
+}
+
 
 VertIdx add(const VertIdx v1, const VertIdx v2)
 {
