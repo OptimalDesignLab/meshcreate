@@ -1148,8 +1148,8 @@ Geom getEdgeClassification(apf::Mesh* m, VertIdx _v1, VertIdx _v2,
     // needed for single dimensions
   } else if (g1.model_dim == 0 && g2.model_dim == 2)
   {
-    int idx = contains(face_verts[g2.model_tag], 4, g1.model_tag);
-    if (idx >= 0)
+    bool idx = contains_bool(face_verts[g2.model_tag], 4, g1.model_tag);
+    if (idx)
     {
       model_dim = g2.model_dim;
       model_tag = g2.model_tag;
