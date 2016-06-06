@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #module load pumi/core-sim
 set -x
-CXXFLAGS="$CXXFLAGS -g -O2 -Wall -fno-omit-frame-pointer"
+CXXFLAGS="$CXXFLAGS -g -O2 -Wall -fno-omit-frame-pointer "
 mpicxx $1.cc apfSBPShape.cc apfSBPShape3.cc $CXXFLAGS -std=c++11 -I`pwd` `pkg-config --cflags --libs libmds` -Wall -o $1
 set +x

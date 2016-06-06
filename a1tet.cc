@@ -492,6 +492,7 @@ int main(int argc, char** argv)
   std::cout << "finished deriving model" << std::endl;
 */
   double t_verify_start = get_time();
+  return 0;
   m->acceptChanges();
   std::cout << "accepted changes" << std::endl;
   checkMeshFaces(m);
@@ -1855,11 +1856,7 @@ bool contains_bool(const int vals[], const int len, const int val)
   bool found = false;
   for (int i = 0; i < len; ++i)
   {
-    if (vals[i] == val)
-    {
-      found = true;
-      break;
-    }
+    found = found | (vals[i] == val);
   }
 
   return found;
