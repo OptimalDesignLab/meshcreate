@@ -492,7 +492,6 @@ int main(int argc, char** argv)
   std::cout << "finished deriving model" << std::endl;
 */
   double t_verify_start = get_time();
-  return 0;
   m->acceptChanges();
   std::cout << "accepted changes" << std::endl;
   checkMeshFaces(m);

@@ -505,7 +505,7 @@ int main(int argc, char** argv)
 
   // write output and clean up
   apf::writeVtkFiles("outTri", m);
-  m->writeNative("/users/creanj/meshcreate/meshfiles/");
+  m->writeNative("./meshfiles/");
 /*
   apf::MeshIterator* it = m->begin(2);
   apf::MeshEntity* e = m->iterate(it);
