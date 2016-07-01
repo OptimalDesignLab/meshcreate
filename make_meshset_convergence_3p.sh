@@ -9,7 +9,8 @@
 first=5  # number of elements in each direction in the first mesh
 inc=1  # increment for the number of elements
 last=15  # number of elements in the last mesh
-name_prefix="cube"  # the file name prefix
+nproc=4
+name_prefix="pcube2"  # the file name prefix
 perturb=0  # control perturbation of mesh points
 echo "perturb = $perturb"
 
@@ -20,7 +21,7 @@ for i in `seq $first $inc $last`;
 do
 	echo "numel = $i"
 #        ./a1tri2_polar $i $i
-        ./make_parallel_mesh3.sh $i $i $perturb "$name_prefix"_"$idx"_ $nproc
+        ./make_parallel_mesh3.sh $i $i $i $perturb "$name_prefix"_"$idx"_ $nproc
 #        cp -v ./meshfiles/abc0.smb ./meshfiles/"$name_prefix"_"$idx"_0.smb
 
         idx=$(expr $idx + 1)
