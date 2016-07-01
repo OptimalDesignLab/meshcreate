@@ -358,9 +358,9 @@ int main(int argc, char** argv)
   double xmin = 1.0;
   double ymin = 1.0;
   double zmin = 1.0;
-  double xdist = 2;  // xmax - xmin
-  double ydist = 2;  // ymax - ymin
-  double zdist = 2;
+  double xdist = 1;  // xmax - xmin
+  double ydist = 1;  // ymax - ymin
+  double zdist = 1;
   double x_spacing = xdist/numElx;  // spacing of el
   double y_spacing = ydist/numEly;
   double z_spacing = zdist/numElz;

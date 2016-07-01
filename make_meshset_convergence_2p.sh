@@ -21,8 +21,8 @@ for i in `seq $first $inc $last`;
 do
 	echo "numel = $i"
 #        ./a1tri2_polar $i $i
-        ./make_parallel_mesh.sh $i $i $perturb "$name_prefix"_"$idx"_ $nproc
-        cp -v ./meshfiles/"$name_prefix"_"$idx"* ~/meshfiles/
+        ./make_parallel_mesh2.sh $i $i $perturb "$name_prefix"_"$idx"_ $nproc
+#        cp -v ./meshfiles/"$name_prefix"_"$idx"* ~/meshfiles/
 
         idx=$(expr $idx + 1)
 done

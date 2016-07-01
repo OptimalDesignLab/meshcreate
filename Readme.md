@@ -5,6 +5,8 @@ for Pumi.
   `a1tri2`: creates a mesh of triangular elements on a square domain
   `a1tri2_polar`: creates a mesh of triangular elements on a quarter 
                   circle domain
+  `a1tet`: creates a regular mesh of tetrahedra on a square domain
+
 ## Compiling
   The script `build.scorec.sh2` is used to build the programs.  To compile
   `a1tri2.cc` for example, it is invoked as follows:
@@ -24,6 +26,21 @@ for Pumi.
   This executable takes the first two argument that `a1tri2` requires.
   Vertex perturbation is not supported
 
+### `a1tet` (serial)
+  This execuable takes 3 required arguments and one optional argument.  The
+  first 3 specify the number of cubes in the x, y, and z directions, 
+  respectively.  Each cube is divided into 6 tetrahedra.  The fourth option 
+  controls vertex perturbation.  If not specified, no perturbation is applied
+
+### Scripts
+  Several shell scripts are provided to automate common tasks.  All scripts
+  have a name, followed by a number and possibly a letter.  The number 
+  describes the dimensional of the creates meshes, and the letter describes
+  whether the resulting mesh is serial or parallel.  For example,
+  `make_meshset_convergence_3s.sh` performs the action of 
+  `make_meshset_convergence.sh` (described below), resulting in a 3 dimensional
+  serial mesh.
+
 ### Parallel Meshes
   The easiest way to create a parallel mesh is to use the script 
   `make_parallel_mesh.sh`.  It takes 5 arguments, the first three are the
@@ -35,15 +52,22 @@ for Pumi.
   programs to be found via the `$PATH` variable.  They are included with both
   the Scorec installation of Pumi and the local build of PumiInterface.
 
+  Alternatively, the script `refine_and_split.sh` takes an exising serial mesh,
+  partitions it into the specified number of processes, and then performs 
+  uniform mesh refinement to the partitioned mesh.  This doubles the number 
+  of elements in each direction (ie. in 2d the resulting mesh has 4x the number
+  of elements).  See the top of the script for arguments.
+
 ### Making Sets of Meshes
-  Two additional scripts exist for making sets of mesh with increasing numbers
-  of elements.  In serial, `make_meshes.sh` can be used to make a set of meshes.
-  The script takes no arguments, see the comments at the top of the script 
-  for details on how to specify the sizes of the meshes.
-  In parallel, `make_meshset.sh` can be used.  It calles `make_parallel_mesh.sh`
-  internally to create each mesh.  As with `make_meshes.sh`, it takes no
-  arguments and there is a description of how to specify the relevent parameters
-  at the top of the file.
+  Two additional scripts exist for making sets of meshes.  
+  `make_meshset_convergence.sh` makes a set of meshes with increasing 
+  numbers of elements.  It takes no arguments, see the comments at the top
+  of the script for details on how to specify the sizing and naming of the 
+  meshes.
+
+  The script `make_meshset_strong.sh` produces a set of meshes with the 
+  same number of elements divided among an increasing number of processes.
+  See the comments at the top of the script to specify sizing and partition.
 
 ## Geometry classification
   The mesh generators correctly classify the meshes on geometric entities.
