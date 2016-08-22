@@ -8,9 +8,9 @@
 # variable to determine the number of elements
 first=5  # number of elements in each direction in the first mesh
 inc=1  # increment for the number of elements
-last=15  # number of elements in the last mesh
+last=25  # number of elements in the last mesh
 nproc=4
-name_prefix="pcube2"  # the file name prefix
+name_prefix="pcube3"  # the file name prefix
 perturb=0  # control perturbation of mesh points
 echo "perturb = $perturb"
 
