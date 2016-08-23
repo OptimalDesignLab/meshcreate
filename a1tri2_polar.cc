@@ -52,11 +52,7 @@ int main(int argc, char** argv)
   gmi_register_null();
   gmi_model* g = gmi_load(".null");
   apf::Mesh2* m = apf::makeEmptyMdsMesh(g, 2, false);
-/*
-  apf::FieldShape* m_shape = m->getShape();
-  const char shape_name[] = m_shape->getName();
-  std::cout << "shape name = " << shape_name << std::endl;
-*/
+  
   // Problem 3
   std::cout << "Problem 3 output: " << std::endl;
 //  double pi = 3.14159265;
@@ -594,8 +590,8 @@ void setMatches(apf::Mesh2*m, apf::MeshEntity*** verts, Periodic periodic, Count
       e2 = verts[0][i+1];
       edge1 = getEdge(m, e1, e2);
 
-      e1 = verts[counts.numEltheta][i];
-      e2 = verts[counts.numEltheta][i+1];
+      e1 = verts[counts.numElr][i];
+      e2 = verts[counts.numElr][i+1];
       edge2 = getEdge(m, e1, e2);
       m->addMatch(edge1, 0, edge2);
       m->addMatch(edge2, 0, edge1);

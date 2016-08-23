@@ -640,8 +640,8 @@ void setMatches(apf::Mesh2*m, apf::MeshEntity*** verts, Periodic periodic, Count
       e2 = verts[0][i+1];
       edge1 = getEdge(m, e1, e2);
 
-      e1 = verts[counts.numEly][i];
-      e2 = verts[counts.numEly][i+1];
+      e1 = verts[counts.numElx][i];
+      e2 = verts[counts.numElx][i+1];
       edge2 = getEdge(m, e1, e2);
       m->addMatch(edge1, 0, edge2);
       m->addMatch(edge2, 0, edge1);
