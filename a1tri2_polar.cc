@@ -13,6 +13,22 @@
 //#include "funcs1.h"
 #include "apfSBPShape.h"
 
+struct _Periodic {
+  bool r;
+  bool theta;
+};
+typedef struct _Periodic Periodic;
+
+struct _Counts {
+  int numElr;
+  int numEltheta;
+};
+typedef struct _Counts Counts;
+
+void checkMesh(apf::Mesh* m);
+void setMatches(apf::Mesh2*m, apf::MeshEntity*** verts, Periodic periodic, Counts counts);
+apf::MeshEntity* getEdge(apf::Mesh* m, apf::MeshEntity* v1, apf::MeshEntity* v2);
+
 // create a mesh for a sector of a circle
 // all angles measured in radians
 // argv[1] = number of elements in r direction
@@ -77,6 +93,8 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  Counts counts = {numElr, numEltheta};
+  Periodic periodic = {true, true};
 
   double r_range = 2.0;  // rmax - rmin
   double theta_range = M_PI/2.0;  // theta max - theta min
@@ -458,6 +476,10 @@ int main(int argc, char** argv)
   apf::deriveMdsModel(m);
   std::cout << "finished deriving model" << std::endl;
 */
+
+  // set periodic boundaries if needed
+  setMatches(m, vertices, periodic, counts);
+ 
   m->acceptChanges();
   std::cout << "accepted changes" << std::endl;
   m->verify();
@@ -520,3 +542,93 @@ int main(int argc, char** argv)
   MPI_Finalize();
 }
 
+// set matched entities for periodic boundaries
+void setMatches(apf::Mesh2*m, apf::MeshEntity*** verts, Periodic periodic, Counts counts)
+{
+  apf::MeshEntity* e1;
+  apf::MeshEntity* e2;
+  apf::MeshEntity* edge1;
+  apf::MeshEntity* edge2;
+  if (periodic.r)
+  {
+    std::cout << "setting r direction matches" << std::endl;
+    // set matching vertices
+    for (int i = 0; i < (counts.numElr+1); ++i)
+    {
+      e1 = verts[i][0];
+      e2 = verts[i][counts.numEltheta];
+      m->addMatch(e1, 0, e2);
+      m->addMatch(e2, 0, e1);
+    }
+
+    // now do edges
+    for (int i = 0; i < counts.numElr; ++i)
+    {
+      e1 = verts[i][0];
+      e2 = verts[i+1][0];
+      edge1 = getEdge(m, e1, e2);
+
+      e1 = verts[i][counts.numEltheta];
+      e2 = verts[i+1][counts.numEltheta];
+      edge2 = getEdge(m, e1, e2);
+      m->addMatch(edge1, 0, edge2);
+      m->addMatch(edge2, 0, edge1);
+    }
+
+  }
+ 
+  if (periodic.theta)
+  {
+    std::cout << "setting theta direction matches" << std::endl;
+    for (int i = 0; i < (counts.numEltheta+1); ++i)
+    {
+      e1 = verts[0][i];
+      e2 = verts[counts.numElr][i];
+      m->addMatch(e1, 0, e2);
+      m->addMatch(e2, 0, e1);
+    }
+
+    for (int i = 0; i < counts.numEltheta; ++i)
+    {
+      e1 = verts[0][i];
+      e2 = verts[0][i+1];
+      edge1 = getEdge(m, e1, e2);
+
+      e1 = verts[counts.numEltheta][i];
+      e2 = verts[counts.numEltheta][i+1];
+      edge2 = getEdge(m, e1, e2);
+      m->addMatch(edge1, 0, edge2);
+      m->addMatch(edge2, 0, edge1);
+    }
+  }
+
+  if (periodic.r && periodic.theta)
+  {
+    e1 = verts[0][0];
+    e2 = verts[counts.numElr][counts.numEltheta];
+    m->addMatch(e1, 0, e2);
+    m->addMatch(e2, 0, e1);
+  }
+
+} // function setMatches
+
+// get edge defined by 2 vertices
+apf::MeshEntity* getEdge(apf::Mesh* m, apf::MeshEntity* v1, apf::MeshEntity* v2)
+{
+  static apf::Up up1; static apf::Up up2;
+  // get edge common to v1 and v2
+  m->getUp(v1, up1);
+  m->getUp(v2, up2);
+
+  for (int i=0; i < up1.n; ++i)
+    for (int j=0; j < up2.n; ++j)
+    {
+      if (up1.e[i] == up2.e[j])
+        return up1.e[i];
+    }
+
+  return NULL;
+
+}  // function getEdge
+
+ 
