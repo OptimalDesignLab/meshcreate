@@ -12,8 +12,22 @@
 //#include "funcs1.h"
 #include "apfSBPShape.h"
 
-void checkMesh(apf::Mesh* m);
+struct _Periodic {
+  bool x;
+  bool y;
+};
+typedef struct _Periodic Periodic;
 
+struct _Counts {
+  int numElx;
+  int numEly;
+};
+typedef struct _Counts Counts;
+
+void checkMesh(apf::Mesh* m);
+void setMatches(apf::Mesh2*m, apf::MeshEntity*** verts, Periodic periodic, Counts counts);
+apf::MeshEntity* getEdge(apf::Mesh* m, apf::MeshEntity* v1, apf::MeshEntity* v2);
+void printMatches(apf::Mesh* m, Periodic periodic);
 
 // the program creates a cartesian mesh composed to triangles.
 // The mesh is created by subdividing each rectangle into two triangles
@@ -84,7 +98,8 @@ int main(int argc, char** argv)
     return 1;
   }
 
-
+  Counts counts = {numElx, numEly};
+  Periodic periodic = {true, false};
 
   double xmin = 0.0;
   double ymin = -5.0;
@@ -470,6 +485,12 @@ int main(int argc, char** argv)
 */
      }
   }
+
+  // set periodic boundaries if needed
+  std::cout << "before setting matches" << std::endl;
+  printMatches(m, periodic);
+  std::cout << "after setting matches" << std::endl;
+  setMatches(m, vertices, periodic, counts);
 /*
 //  apf::FieldShape* linear2 = apf::getSBPQuadratic();
     apf::FieldShape* linear2 = apf::getLagrange(1);
@@ -484,6 +505,7 @@ int main(int argc, char** argv)
   std::cout << "finished deriving model" << std::endl;
 */
   m->acceptChanges();
+  printMatches(m, periodic);
   std::cout << "accepted changes" << std::endl;
   checkMesh(m);
   m->verify();
@@ -641,3 +663,100 @@ void checkMesh(apf::Mesh* m)
 
 
 } // end function
+
+// set matched entities for periodic boundaries
+void setMatches(apf::Mesh2*m, apf::MeshEntity*** verts, Periodic periodic, Counts counts)
+{
+  apf::MeshEntity* e1;
+  apf::MeshEntity* e2;
+  apf::MeshEntity* edge1;
+  apf::MeshEntity* edge2;
+  if (periodic.x)
+  {
+    std::cout << "setting x direction matches" << std::endl;
+    // set matching vertices
+    for (int i = 0; i < (counts.numElx+1); ++i)
+    {
+      e1 = verts[i][0];
+      e2 = verts[i][counts.numEly];
+      std::cout << "matching verts[" << i << "][0] with " << "verts[" << i << "][" << counts.numEly << "]" << std::endl;
+      std::cout << "e1 = " << e1 << ", e2 = " << e2 << std::endl;
+      m->addMatch(e1, 0, e2);
+    }
+/*
+    // now do edges
+    for (int i = 0; i < counts.numElx; ++i)
+    {
+      e1 = verts[i][0];
+      e2 = verts[i+1][0];
+      edge1 = getEdge(m, e1, e2);
+
+      e1 = verts[i][counts.numEly];
+      e2 = verts[i+1][counts.numEly];
+      edge2 = getEdge(m, e1, e2);
+      m->addMatch(edge1, 0, edge2);
+    }
+*/
+
+  } else if (periodic.y)
+  {
+    std::cout << "setting y direction matches" << std::endl;
+    for (int i = 0; i < (counts.numEly+1); ++i)
+    {
+      e1 = verts[0][i];
+      e2 = verts[counts.numElx][i];
+      m->addMatch(e1, 0, e2);
+    }
+
+    for (int i = 0; i < counts.numEly; ++i)
+    {
+      e1 = verts[0][i];
+      e2 = verts[0][i+1];
+      edge1 = getEdge(m, e1, e2);
+
+      e1 = verts[counts.numEly][i];
+      e2 = verts[counts.numEly][i+1];
+      edge2 = getEdge(m, e1, e2);
+      m->addMatch(edge1, 0, edge2);
+    }
+  }
+
+} // function setMatches
+
+// get edge defined by 2 vertices
+apf::MeshEntity* getEdge(apf::Mesh* m, apf::MeshEntity* v1, apf::MeshEntity* v2)
+{
+  static apf::Up up1; static apf::Up up2;
+  // get edge common to v1 and v2
+  m->getUp(v1, up1);
+  m->getUp(v2, up2);
+
+  for (int i=0; i < up1.n; ++i)
+    for (int j=0; j < up2.n; ++j)
+    {
+      if (up1.e[i] == up2.e[j])
+        return up1.e[i];
+    }
+
+  return NULL;
+
+}  // function getEdge
+
+void printMatches(apf::Mesh* m, Periodic periodic)
+{
+  apf::Matches matches;
+  if (periodic.x)
+  {
+    apf::MeshIterator* it = m->begin(0);
+    apf::MeshEntity* e;
+    while ( (e = m->iterate(it)) )
+    {
+      m->getMatches(e, matches);
+      for (apf::Matches::iterator it = matches.begin(); it != matches.end(); ++it)
+      {
+        std::cout << "entity " << e << " is matched to " << it->entity << std::endl;
+      }
+    }
+  }
+}
+      
