@@ -539,6 +539,12 @@ void setMatches(apf::Mesh2*m, apf::MeshEntity*** verts, Periodic periodic, Count
     e2 = verts[counts.numElr][counts.numEltheta];
     m->addMatch(e1, 0, e2);
     m->addMatch(e2, 0, e1);
+
+    e1 = verts[counts.numElr][0];
+    e2 = verts[0][counts.numEltheta];
+    m->addMatch(e1, 0, e2);
+    m->addMatch(e2, 0, e1);
+ 
   }
 
 } // function setMatches

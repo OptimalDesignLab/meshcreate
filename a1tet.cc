@@ -406,7 +406,7 @@ int main(int argc, char** argv)
   double pert_fac = 10*M_PI;
   double pert_mag = 0.1;
 
-  Periodic periodic = {true, false, false};
+  Periodic periodic = {false, false, true};
 
 //  std::cout << "SIZE_MAX = " << SIZE_MAX << std::endl;
   std::cout << "about to allocate memory" << std::endl;
@@ -1943,6 +1943,9 @@ void setMatches(apf::Mesh2* m, apf::MeshEntity**** verts, Periodic periodic, Siz
 {
   apf::MeshEntity* e1;
   apf::MeshEntity* e2;
+  apf::MeshEntity* edge1;
+  apf::MeshEntity* edge2;
+
   int dir;
   int min_idx;
   int max_idx;
@@ -2018,6 +2021,142 @@ void setMatches(apf::Mesh2* m, apf::MeshEntity**** verts, Periodic periodic, Siz
         matchEdgesFaces(m, j, min_idx, k, max_idx, dir, verts);
 
   }  // end if periodic.yz
+
+  if (periodic.xz && periodic.xy)
+  {
+    // vertices
+    for (int i=0; i < (sizes.numElx+1); ++i)
+    {
+      e1 = verts[i][0][0];
+      e2 = verts[i][sizes.numEly][sizes.numElz];
+      setMatch(m, e1, e2);
+
+      e1 = verts[i][sizes.numEly][0];
+      e2 = verts[i][0][sizes.numElz];
+      setMatch(m, e1, e2);
+    }
+
+    // edges
+    for (int i=0; i < (sizes.numElx); ++i)
+    {
+      // first diagonal
+      e1 = verts[i][0][0];
+      e2 = verts[i+1][0][0];
+      edge1 = getEdge(m, e1, e2);
+
+      e1 = verts[i][sizes.numEly][sizes.numElz];
+      e2 = verts[i+1][sizes.numEly][sizes.numElz];
+      edge2 = getEdge(m, e1, e2);
+      setMatch(m, e1, e2);
+
+      // second diagonal
+      e1 = verts[i][sizes.numEly][0];
+      e2 = verts[i+1][sizes.numEly][0];
+      edge1 = getEdge(m, e1, e2);
+
+      e1 = verts[i][0][sizes.numElz];
+      e2 = verts[i+1][0][sizes.numElz];
+      edge2 = getEdge(m, e1, e2);
+      setMatch(m, e1, e2);
+    }
+
+  }  // if xz && xy
+
+  if (periodic.xz && periodic.yz)
+  {
+    for (int j=0; j < (sizes.numEly+1); ++j)
+    {
+      e1 = verts[0][j][0];
+      e2 = verts[sizes.numElx][j][sizes.numElz];
+      setMatch(m, e1, e2);
+
+      e1 = verts[sizes.numElx][j][0];
+      e2 = verts[0][j][sizes.numElz];
+      setMatch(m, e1, e2);
+    }
+
+    for (int j=0; j < sizes.numEly; ++j)
+    {
+      // first diagonal
+      e1 = verts[0][j][0];
+      e2 = verts[0][j+1][0];
+      edge1 = getEdge(m, e1, e2);
+
+      e1 = verts[sizes.numElx][j][sizes.numElz];
+      e2 = verts[sizes.numElx][j+1][sizes.numElz];
+      edge2 = getEdge(m, e1, e2);
+      setMatch(m, edge1, edge2);
+
+      // second diagonal
+      e1 = verts[sizes.numElx][j][0];
+      e2 = verts[sizes.numElx][j+1][0];
+      edge1 = getEdge(m, e1, e2);
+
+      e1 = verts[0][j][sizes.numElz];
+      e2 = verts[0][j+1][sizes.numElz];
+      edge2 = getEdge(m, e1, e2);
+      setMatch(m, edge1, edge2);
+    }
+  } // if xz && yz
+
+  if (periodic.xy && periodic.yz)
+  {
+    for (int k=0; k < (sizes.numElz+1); ++k)
+    {
+      e1 = verts[0][0][k];
+      e2 = verts[sizes.numElx][sizes.numEly][k];
+      setMatch(m, e1, e2);
+
+      e1 = verts[sizes.numElx][0][k];
+      e2 = verts[0][sizes.numEly][k];
+      setMatch(m, e1, e2);
+    }
+
+    for (int k=0; k < sizes.numElz; ++k)
+    {
+      // first diagonal
+      e1 = verts[0][0][k];
+      e2 = verts[0][0][k+1];
+      edge1 = getEdge(m, e1, e2);
+
+      e1 = verts[sizes.numElx][sizes.numEly][k];
+      e2 = verts[sizes.numElx][sizes.numEly][k+1];
+      edge2 = getEdge(m, e1, e2);
+      setMatch(m, edge1, edge2);
+
+      // second diagonal
+      e1 = verts[sizes.numElx][0][k];
+      e2 = verts[sizes.numElx][0][k+1];
+      edge1 = getEdge(m, e1, e2);
+
+      e1 = verts[0][sizes.numEly][k];
+      e2 = verts[0][sizes.numEly][k+1];
+      edge2 = getEdge(m, e1, e2);
+      setMatch(m, edge1, edge2);
+    }
+
+  }  // end if xy && yz
+
+
+  if (periodic.xy && periodic.xz && periodic.yz)
+  {
+    e1 = verts[0][0][0];
+    e2 = verts[sizes.numElx][sizes.numEly][sizes.numElz];
+    setMatch(m, e1, e2);
+
+    e1 = verts[sizes.numElx][0][0];
+    e2 = verts[0][sizes.numEly][sizes.numElz];
+    setMatch(m, e1, e2);
+
+    e1 = verts[0][sizes.numEly][0];
+    e2 = verts[sizes.numElx][0][sizes.numElz];
+    setMatch(m, e1, e2);
+
+    e1 = verts[0][0][sizes.numElz];
+    e2 = verts[sizes.numElx][sizes.numEly][0];
+    setMatch(m, e1, e2);
+
+  }
 
 } // end function setMatches
 
