@@ -1958,17 +1958,20 @@ void setMatches(apf::Mesh2* m, apf::MeshEntity**** verts, Periodic periodic, Siz
     for (int i=0; i < (sizes.numElx+1); ++i)
       for (int k=0; k < (sizes.numElz+1); ++k)
       {
-        std::cout << "matching verts[" << i << "][" << min_idx << "][" << k << "]" << std::endl;
         e1 = verts[i][min_idx][k];
         e2 = verts[i][max_idx][k];
         m->addMatch(e1, 0, e2);
         m->addMatch(e2, 0, e1);
       }
 
+    std::cout << "matching edges and faces" << std::endl;
     // edges and faces
     for (int i=0; i < sizes.numElx; ++i)
       for (int k=0; k < sizes.numElz; ++k)
+      {
+        std::cout << "\nat point " << i << ", " << k << std::endl;
         matchEdgesFaces(m, i, min_idx, k, max_idx, dir, verts);
+      }
 
   }  // end if periodic.xy
 
@@ -2024,6 +2027,7 @@ void matchEdgesFaces(apf::Mesh2* m, int i, int min_idx, int k, int max_idx, int 
   apf::MeshEntity* e1, *e2, *e3, *edge1, *edge2;
 
         // bottom edge
+  std::cout << "bottom edge" << std::endl;
         e1 = verts[i][min_idx][k];
         e2 = verts[i+1][min_idx][k];
         e1 = getVertShuffle(dir, i, min_idx, k, verts);
@@ -2039,6 +2043,7 @@ void matchEdgesFaces(apf::Mesh2* m, int i, int min_idx, int k, int max_idx, int 
         setMatch(m, edge1, edge2);
 
         // right edge
+  std::cout << "right edge" << std::endl;
         e1 = verts[i+1][min_idx][k];
         e2 = verts[i+1][min_idx][k+1];
         e1 = getVertShuffle(dir, i+1, min_idx, k, verts);
@@ -2055,6 +2060,7 @@ void matchEdgesFaces(apf::Mesh2* m, int i, int min_idx, int k, int max_idx, int 
         setMatch(m, edge1, edge2);
 
         // top edge
+  std::cout << "top edge" << std::endl;
         e1 = verts[i+1][min_idx][k+1];
         e2 = verts[i][min_idx][k+1];
         e1 = getVertShuffle(dir, i+1, min_idx, k+1, verts);
@@ -2072,6 +2078,7 @@ void matchEdgesFaces(apf::Mesh2* m, int i, int min_idx, int k, int max_idx, int 
         setMatch(m, edge1, edge2);
 
         // left edge
+  std::cout << "left edge" << std::endl;
         e1 = verts[i][min_idx][k];
         e2 = verts[i][min_idx][k+1];
         e1 = getVertShuffle(dir, i, min_idx, k, verts);
@@ -2089,6 +2096,7 @@ void matchEdgesFaces(apf::Mesh2* m, int i, int min_idx, int k, int max_idx, int 
         setMatch(m, edge1, edge2);
 
         // possible diagonal
+  std::cout << "diagonal 1 edge" << std::endl;
         e1 = verts[i][min_idx][k];
         e2 = verts[i+1][min_idx][k+1];
         e1 = getVertShuffle(dir, i, min_idx, k, verts);
@@ -2099,7 +2107,7 @@ void matchEdgesFaces(apf::Mesh2* m, int i, int min_idx, int k, int max_idx, int 
         e1 = verts[i][max_idx][k];
         e2 = verts[i][max_idx][k];
         e1 = getVertShuffle(dir, i, max_idx, k, verts);
-        e2 = getVertShuffle(dir, i, max_idx, k, verts);
+        e2 = getVertShuffle(dir, i+1, max_idx, k+1, verts);
 
         edge2 = getEdge(m, e1, e2);
 
@@ -2107,6 +2115,7 @@ void matchEdgesFaces(apf::Mesh2* m, int i, int min_idx, int k, int max_idx, int 
           setMatch(m, edge1, edge2);
 
         // other possible diagonal
+  std::cout << "diagonal 2 edge" << std::endl;
         e1 = verts[i+1][min_idx][k];
         e2 = verts[i][min_idx][k+1];
         e1 = getVertShuffle(dir, i+1, min_idx, k, verts);
@@ -2125,6 +2134,7 @@ void matchEdgesFaces(apf::Mesh2* m, int i, int min_idx, int k, int max_idx, int 
           setMatch(m, edge1, edge2);
 
         // possible face
+  std::cout << "face 1" << std::endl;
         e1 = verts[i][min_idx][k];
         e2 = verts[i+1][min_idx][k];
         e3 = verts[i+1][min_idx][k+1];
@@ -2146,6 +2156,7 @@ void matchEdgesFaces(apf::Mesh2* m, int i, int min_idx, int k, int max_idx, int 
           setMatch(m, edge1, edge2);
 
         // another possible face
+  std::cout << "face 2" << std::endl;
         e1 = verts[i+1][min_idx][k];
         e2 = verts[i+1][min_idx][k+1];
         e3 = verts[i][min_idx][k+1];
@@ -2168,6 +2179,7 @@ void matchEdgesFaces(apf::Mesh2* m, int i, int min_idx, int k, int max_idx, int 
           setMatch(m, edge1, edge2);
 
         // 3rd possible face
+  std::cout << "face 3" << std::endl;
         e1 = verts[i+1][min_idx][k+1];
         e2 = verts[i][min_idx][k+1];
         e3 = verts[i][min_idx][k];
@@ -2192,6 +2204,7 @@ void matchEdgesFaces(apf::Mesh2* m, int i, int min_idx, int k, int max_idx, int 
           setMatch(m, edge1, edge2);
 
         // 4th possible face
+  std::cout << "face 4" << std::endl;
         e1 = verts[i][min_idx][k+1];
         e2 = verts[i][min_idx][k];
         e3 = verts[i+1][min_idx][k];
@@ -2304,6 +2317,7 @@ void setMatch(apf::Mesh2* m, apf::MeshEntity* e1, apf::MeshEntity* e2)
 {
   if ( !isMatch(m, e1, e2) )
   {
+    std::cout << "setting match: " << e1 << " with " << e2 << "\n" << std::endl;
     m->addMatch(e1, 0, e2);
     // assume the reverse match has not been done yet either
     m->addMatch(e2, 0, e1);
@@ -2340,7 +2354,13 @@ void countMatches(apf::Mesh* m)
       apf::Matches matches;
       m->getMatches(e, matches);
       if (matches.getSize() > 0)
+      {
         nummatches[dim] += 1;
+        if (matches.getSize() > 1)
+          std::cout << "Warning: entity " << e << "has too many mataches" << std::endl;
+        if (dim == 1)
+          std::cout << "edge " << e << " is matched with " << matches[0].entity << std::endl;
+      }
     }
   }
 
