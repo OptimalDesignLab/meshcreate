@@ -48,6 +48,14 @@ struct _Counts {
 
 typedef struct _Counts Counts;
 
+struct _Periodic {
+  bool xz;
+  bool xy;
+  bool yz;
+};
+typedef struct _Periodic Periodic;
+
+
 // addition on VertIdx
 VertIdx add(const VertIdx v1, const VertIdx v2);
 VertIdx add(const VertIdx v1, const int arr[3]);
@@ -211,6 +219,26 @@ void calcCentroid(apf::Mesh* m, apf::MeshEntity** verts,  double centroid[3]);
 void checkMesh(apf::Mesh* m, Sizes sizes, Counts counts);
 
 void checkMeshFaces(apf::Mesh* m);
+
+// set entity matches
+void setMatches(apf::Mesh2* m, apf::MeshEntity**** verts, Periodic periodic, Sizes sizes);
+
+// set the edge and face matches for a given point in the grid
+void matchEdgesFaces(apf::Mesh2* m, int i, int min_idx, int k, int max_idx, int dir, apf::MeshEntity**** verts);
+
+void shuffle(int dir, int iprime, int jprime, int kprime, VertIdx& idx);
+
+apf::MeshEntity* getVertShuffle(int dir, int iprime, int jprime, int kprime, apf::MeshEntity**** verts);
+
+apf::MeshEntity* getEdge(apf::Mesh* m, apf::MeshEntity* v1, apf::MeshEntity* v2);
+
+apf::MeshEntity* getFace(apf::Mesh* m, apf::MeshEntity* v1, apf::MeshEntity* v2, apf::MeshEntity* v3);
+
+void setMatch(apf::Mesh2* m, apf::MeshEntity* e1, apf::MeshEntity* e2);
+
+bool isMatch(apf::Mesh* m, apf::MeshEntity* e1, apf::MeshEntity* e2);
+
+void countMatches(apf::Mesh* m);
 
 class FaceCallback : public apf::BuildCallback
 {
@@ -378,6 +406,8 @@ int main(int argc, char** argv)
   double pert_fac = 10*M_PI;
   double pert_mag = 0.1;
 
+  Periodic periodic = {true, false, false};
+
 //  std::cout << "SIZE_MAX = " << SIZE_MAX << std::endl;
   std::cout << "about to allocate memory" << std::endl;
   apf::MeshEntity**** vertices = (apf::MeshEntity****) calloc(numElx+1, sizeof(apf::MeshEntity***));
@@ -491,6 +521,10 @@ int main(int argc, char** argv)
   apf::deriveMdsModel(m);
   std::cout << "finished deriving model" << std::endl;
 */
+  countMatches(m);
+  setMatches(m, vertices, periodic, sizes);
+  countMatches(m);
+
   double t_verify_start = get_time();
   m->acceptChanges();
   std::cout << "accepted changes" << std::endl;
@@ -1901,4 +1935,417 @@ double get_time()
   struct timeval t;
   gettimeofday(&t, NULL);
   return t.tv_sec + t.tv_usec*1e-6;
+}
+
+
+
+void setMatches(apf::Mesh2* m, apf::MeshEntity**** verts, Periodic periodic, Sizes sizes)
+{
+  apf::MeshEntity* e1;
+  apf::MeshEntity* e2;
+  int dir;
+  int min_idx;
+  int max_idx;
+  std::cout << "setting matches" << std::endl;
+
+  if (periodic.xz)
+  {
+    std::cout << "making xz planes periodic" << std::endl;
+    int min_idx = 0;
+    int max_idx = sizes.numEly;
+    dir = 1;
+    // vertices
+    for (int i=0; i < (sizes.numElx+1); ++i)
+      for (int k=0; k < (sizes.numElz+1); ++k)
+      {
+        std::cout << "matching verts[" << i << "][" << min_idx << "][" << k << "]" << std::endl;
+        e1 = verts[i][min_idx][k];
+        e2 = verts[i][max_idx][k];
+        m->addMatch(e1, 0, e2);
+        m->addMatch(e2, 0, e1);
+      }
+
+    // edges and faces
+    for (int i=0; i < sizes.numElx; ++i)
+      for (int k=0; k < sizes.numElz; ++k)
+        matchEdgesFaces(m, i, min_idx, k, max_idx, dir, verts);
+
+  }  // end if periodic.xy
+
+  if (periodic.xy)
+  {
+    min_idx = 0;
+    max_idx = sizes.numElz;
+    dir = 2;
+
+    for (int i=0; i < (sizes.numElx+1); ++i)
+      for (int j=0; j < (sizes.numEly+1); ++j)
+      {
+        e1 = verts[i][j][min_idx];
+        e2 = verts[i][j][max_idx];
+        m->addMatch(e1, 0, e2);
+        m->addMatch(e2, 0, e1);
+      }
+
+    // edges and faces
+    for (int i=0; i < sizes.numElx; ++i)
+      for (int j=0; j < sizes.numEly; ++j)
+        matchEdgesFaces(m, i, min_idx, j, max_idx, dir, verts);
+
+  }  // end if periodic.xy
+
+  if (periodic.yz)
+  {
+    min_idx = 0;
+    max_idx = sizes.numElx;
+    dir = 3;
+
+    for (int j=0; j < (sizes.numEly+1); ++j)
+      for (int k=0; k < (sizes.numElz+1); ++k)
+      {
+        e1 = verts[min_idx][j][k];
+        e2 = verts[max_idx][j][k];
+        m->addMatch(e1, 0, e2);
+        m->addMatch(e2, 0, e1);
+      }
+
+    // edges and faces
+    for (int j=0; j < sizes.numEly; ++j)
+      for (int k=0; k < sizes.numElz; ++k)
+        matchEdgesFaces(m, j, min_idx, k, max_idx, dir, verts);
+
+  }  // end if periodic.yz
+
+} // end function setMatches
+
+void matchEdgesFaces(apf::Mesh2* m, int i, int min_idx, int k, int max_idx, int dir, apf::MeshEntity**** verts)
+{
+  // do all the matches here
+  apf::MeshEntity* e1, *e2, *e3, *edge1, *edge2;
+
+        // bottom edge
+        e1 = verts[i][min_idx][k];
+        e2 = verts[i+1][min_idx][k];
+        e1 = getVertShuffle(dir, i, min_idx, k, verts);
+        e2 = getVertShuffle(dir, i+1, min_idx, k, verts);
+        edge1 = getEdge(m, e1, e2);
+
+        e1 = verts[i][max_idx][k];
+        e2 = verts[i+1][max_idx][k];
+        e1 = getVertShuffle(dir, i, max_idx, k, verts);
+        e2 = getVertShuffle(dir, i+1, max_idx, k, verts);
+        edge2 = getEdge(m, e1, e2);
+
+        setMatch(m, edge1, edge2);
+
+        // right edge
+        e1 = verts[i+1][min_idx][k];
+        e2 = verts[i+1][min_idx][k+1];
+        e1 = getVertShuffle(dir, i+1, min_idx, k, verts);
+        e2 = getVertShuffle(dir, i+1, min_idx, k+1, verts);
+        edge1 = getEdge(m, e1, e2);
+
+        e1 = verts[i+1][max_idx][k];
+        e2 = verts[i+1][max_idx][k+1];
+        e1 = getVertShuffle(dir, i+1, max_idx, k, verts);
+        e2 = getVertShuffle(dir, i+1, max_idx, k+1, verts);
+
+        edge2 = getEdge(m, e1, e2);
+
+        setMatch(m, edge1, edge2);
+
+        // top edge
+        e1 = verts[i+1][min_idx][k+1];
+        e2 = verts[i][min_idx][k+1];
+        e1 = getVertShuffle(dir, i+1, min_idx, k+1, verts);
+        e2 = getVertShuffle(dir, i, min_idx, k+1, verts);
+
+        edge1 = getEdge(m, e1, e2);
+
+        e1 = verts[i+1][max_idx][k+1];
+        e2 = verts[i][max_idx][k+1];
+        e1 = getVertShuffle(dir, i+1, max_idx, k+1, verts);
+        e2 = getVertShuffle(dir, i, max_idx, k+1, verts);
+
+        edge2 = getEdge(m, e1, e2);
+
+        setMatch(m, edge1, edge2);
+
+        // left edge
+        e1 = verts[i][min_idx][k];
+        e2 = verts[i][min_idx][k+1];
+        e1 = getVertShuffle(dir, i, min_idx, k, verts);
+        e2 = getVertShuffle(dir, i, min_idx, k+1, verts);
+
+        edge1 = getEdge(m, e1, e2); 
+
+        e1 = verts[i][max_idx][k];
+        e2 = verts[i][max_idx][k+1];
+        e1 = getVertShuffle(dir, i, max_idx, k, verts);
+        e2 = getVertShuffle(dir, i, max_idx, k+1, verts);
+
+        edge2 = getEdge(m, e1, e2); 
+
+        setMatch(m, edge1, edge2);
+
+        // possible diagonal
+        e1 = verts[i][min_idx][k];
+        e2 = verts[i+1][min_idx][k+1];
+        e1 = getVertShuffle(dir, i, min_idx, k, verts);
+        e2 = getVertShuffle(dir, i+1, min_idx, k+1, verts);
+
+        edge1 = getEdge(m, e1, e2);
+
+        e1 = verts[i][max_idx][k];
+        e2 = verts[i][max_idx][k];
+        e1 = getVertShuffle(dir, i, max_idx, k, verts);
+        e2 = getVertShuffle(dir, i, max_idx, k, verts);
+
+        edge2 = getEdge(m, e1, e2);
+
+        if (edge1 != NULL && edge2 != NULL)
+          setMatch(m, edge1, edge2);
+
+        // other possible diagonal
+        e1 = verts[i+1][min_idx][k];
+        e2 = verts[i][min_idx][k+1];
+        e1 = getVertShuffle(dir, i+1, min_idx, k, verts);
+        e2 = getVertShuffle(dir, i, min_idx, k+1, verts);
+
+        edge1 = getEdge(m, e1, e2);
+
+        e1 = verts[i+1][max_idx][k];
+        e2 = verts[i][max_idx][k+1];
+        e1 = getVertShuffle(dir, i+1, max_idx, k, verts);
+        e2 = getVertShuffle(dir, i, max_idx, k+1, verts);
+
+        edge2 = getEdge(m, e1, e2);
+
+        if (edge1 != NULL && edge2 != NULL)
+          setMatch(m, edge1, edge2);
+
+        // possible face
+        e1 = verts[i][min_idx][k];
+        e2 = verts[i+1][min_idx][k];
+        e3 = verts[i+1][min_idx][k+1];
+        e1 = getVertShuffle(dir, i, min_idx, k, verts);
+        e2 = getVertShuffle(dir, i+1, min_idx, k, verts);
+        e3 = getVertShuffle(dir, i+1, min_idx, k+1, verts);
+        edge1 = getFace(m, e1, e2, e3);
+ 
+        e1 = verts[i][max_idx][k];
+        e2 = verts[i+1][max_idx][k];
+        e3 = verts[i+1][max_idx][k+1];
+        e1 = getVertShuffle(dir, i, max_idx, k, verts);
+        e2 = getVertShuffle(dir, i+1, max_idx, k, verts);
+        e3 = getVertShuffle(dir, i+1, max_idx, k+1, verts);
+
+        edge2 = getFace(m, e1, e2, e3);
+
+        if (edge1 != NULL && edge2 != NULL)
+          setMatch(m, edge1, edge2);
+
+        // another possible face
+        e1 = verts[i+1][min_idx][k];
+        e2 = verts[i+1][min_idx][k+1];
+        e3 = verts[i][min_idx][k+1];
+        e1 = getVertShuffle(dir, i+1, min_idx, k, verts);
+        e2 = getVertShuffle(dir, i+1, min_idx, k+1, verts);
+        e3 = getVertShuffle(dir, i, min_idx, k+1, verts);
+
+        edge1 = getFace(m, e1, e2, e3);
+
+        e1 = verts[i+1][max_idx][k];
+        e2 = verts[i+1][max_idx][k+1];
+        e3 = verts[i][max_idx][k+1];
+        e1 = getVertShuffle(dir, i+1, max_idx, k, verts);
+        e2 = getVertShuffle(dir, i+1, max_idx, k+1, verts);
+        e3 = getVertShuffle(dir, i, max_idx, k+1, verts);
+
+        edge2 = getFace(m, e1, e2, e3);
+
+        if (edge1 != NULL && edge2 != NULL)
+          setMatch(m, edge1, edge2);
+
+        // 3rd possible face
+        e1 = verts[i+1][min_idx][k+1];
+        e2 = verts[i][min_idx][k+1];
+        e3 = verts[i][min_idx][k];
+        e1 = getVertShuffle(dir, i+1, min_idx, k+1, verts);
+        e2 = getVertShuffle(dir, i, min_idx, k+1, verts);
+        e3 = getVertShuffle(dir, i, min_idx, k, verts);
+
+
+        edge1 = getFace(m, e1, e2, e3);
+
+        e1 = verts[i+1][max_idx][k+1];
+        e2 = verts[i][max_idx][k+1];
+        e3 = verts[i][max_idx][k];
+        e1 = getVertShuffle(dir, i+1, max_idx, k+1, verts);
+        e2 = getVertShuffle(dir, i, max_idx, k+1, verts);
+        e3 = getVertShuffle(dir, i, max_idx, k, verts);
+
+
+        edge2 = getFace(m, e1, e2, e3);
+
+        if (edge1 != NULL && edge2 != NULL)
+          setMatch(m, edge1, edge2);
+
+        // 4th possible face
+        e1 = verts[i][min_idx][k+1];
+        e2 = verts[i][min_idx][k];
+        e3 = verts[i+1][min_idx][k];
+        e1 = getVertShuffle(dir, i, min_idx, k+1, verts);
+        e2 = getVertShuffle(dir, i, min_idx, k, verts);
+        e3 = getVertShuffle(dir, i+1, min_idx, k, verts);
+
+
+        edge1 = getFace(m, e1, e2, e3);
+
+        e1 = verts[i][max_idx][k+1];
+        e2 = verts[i][max_idx][k];
+        e3 = verts[i+1][max_idx][k];
+        e1 = getVertShuffle(dir, i, max_idx, k+1, verts);
+        e2 = getVertShuffle(dir, i, max_idx, k, verts);
+        e3 = getVertShuffle(dir, i+1, max_idx, k, verts);
+
+        edge1 = getFace(m, e1, e2, e3);
+
+        if (edge1 != NULL && edge2 != NULL)
+          setMatch(m, edge1, edge2);
+
+
+
+}
+
+// shuffly the indices depending on which plane is currently under consideration
+void shuffle(int dir, int iprime, int jprime, int kprime, VertIdx& idx)
+{
+  if (dir == 1)  // setting xz plane to be periodic
+  {
+    idx.i = iprime;
+    idx.j = jprime;
+    idx.k = kprime;
+  } else if (dir == 2)  // setting xy plane to be periodic
+  {
+    idx.k = jprime;
+    idx.i = iprime;
+    idx.j = kprime;
+  } else if (dir == 3) // setting yz plane to be periodic
+  {
+    idx.i = jprime;
+    idx.j = iprime;
+    idx.k = kprime;
+  }
+}
+
+
+apf::MeshEntity* getVertShuffle(int dir, int iprime, int jprime, int kprime, apf::MeshEntity**** verts)
+{
+  if (dir == 1)  // xz plane is periodic
+  {
+    return verts[iprime][jprime][kprime];
+  } else if (dir == 2)  // xy plane is periodic
+  {
+    return verts[iprime][kprime][jprime];
+  } else if (dir == 3)  // yz plane is periodic
+  {
+    return verts[jprime][iprime][kprime];
+  }
+
+  return NULL;
+}
+
+
+
+
+apf::MeshEntity* getEdge(apf::Mesh* m, apf::MeshEntity* v1, apf::MeshEntity* v2)
+{
+  static apf::Up up1; static apf::Up up2;
+  // get edge common to v1 and v2
+  m->getUp(v1, up1);
+  m->getUp(v2, up2);
+
+  for (int i=0; i < up1.n; ++i)
+    for (int j=0; j < up2.n; ++j)
+    {
+      if (up1.e[i] == up2.e[j])
+        return up1.e[i];
+    }
+
+  return NULL;
+
+}  // function getEdge
+
+apf::MeshEntity* getFace(apf::Mesh* m, apf::MeshEntity* v1, apf::MeshEntity* v2, apf::MeshEntity* v3)
+{
+  apf::MeshEntity* edge1 = getEdge(m, v1, v2);
+  apf::MeshEntity* edge2 = getEdge(m, v2, v3);
+
+  if (edge1 == NULL || edge2 == NULL)
+    return NULL;
+
+  static apf::Up up1; static apf::Up up2;
+  m->getUp(edge1, up1);
+  m->getUp(edge2, up2);
+
+  for (int i=0; i < up1.n; ++i)
+    for (int j=0; j < up2.n; ++j)
+    {
+      if (up1.e[i] == up2.e[j])
+        return up1.e[i];
+    }
+
+  return NULL;
+
+}
+
+void setMatch(apf::Mesh2* m, apf::MeshEntity* e1, apf::MeshEntity* e2)
+{
+  if ( !isMatch(m, e1, e2) )
+  {
+    m->addMatch(e1, 0, e2);
+    // assume the reverse match has not been done yet either
+    m->addMatch(e2, 0, e1);
+  }
+}
+
+// check if e2 is a match of e1 (but not if e1 matches e1)
+bool isMatch(apf::Mesh* m, apf::MeshEntity* e1, apf::MeshEntity* e2)
+{
+  apf::Matches matches;
+  m->getMatches(e1, matches);
+
+  for (int i=0; i < int(matches.size()); ++i)
+  {
+    if (matches[i].entity == e2)
+      return true;
+  }
+
+  return false;
+}
+
+void countMatches(apf::Mesh* m)
+{
+  std::cout << "counting matches" << std::endl;
+  int nummatches[] = {0, 0, 0};
+  apf::MeshEntity* e;
+  apf::MeshIterator* it;
+  for (int dim=0; dim < 3; ++dim)
+  {
+    std::cout << "checking dimension " << dim << std::endl;
+    it = m->begin(dim);
+    while ( (e = m->iterate(it)) )
+    {
+      apf::Matches matches;
+      m->getMatches(e, matches);
+      if (matches.getSize() > 0)
+        nummatches[dim] += 1;
+    }
+  }
+
+  std::cout << "number of vertices with matches = " << nummatches[0] << std::endl;
+  std::cout << "number of edges with matches = " << nummatches[1] << std::endl;
+  std::cout << "number of faces with matches = " << nummatches[2] << std::endl;
+
 }
