@@ -416,7 +416,7 @@ int main(int argc, char** argv)
   double pert_fac = 10*M_PI;
   double pert_mag = 0.1;
 
-  Periodic periodic = {.xz=true, .xy=true, .yz=false};
+  Periodic periodic = {.xz=true, .xy=true, .yz=true};
 
 //  std::cout << "SIZE_MAX = " << SIZE_MAX << std::endl;
   std::cout << "about to allocate memory" << std::endl;
@@ -534,7 +534,7 @@ int main(int argc, char** argv)
 //  countMatches(m);
   setMatches(m, vertices, periodic, sizes);
 //  countMatches(m);
-  countMatches2(m, vertices, sizes);
+//  countMatches2(m, vertices, sizes);
 
   double t_verify_start = get_time();
   m->acceptChanges();
