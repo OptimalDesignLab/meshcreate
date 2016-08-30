@@ -77,3 +77,8 @@ for Pumi.
 
   Geometric entities are number from 0 to n, starting from the bottom left
   corner, going counter-clockwise
+
+## Periodic Meshes
+  Periodic mesh can be created by setting the boolean variable *periodic near
+  the top of each source file.  Do not directly set the fields of the
+  Periodic struct!

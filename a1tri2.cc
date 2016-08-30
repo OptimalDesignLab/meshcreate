@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include <limits.h>
 //#include "funcs1.h"
-#include "apfSBPShape.h"
+//#include "apfSBPShape.h"
 
 struct _Periodic {
   bool x;
@@ -45,9 +45,6 @@ int main(int argc, char** argv)
 {
   MPI_Init(&argc,&argv);
   PCU_Comm_Init();
-  gmi_register_null();
-  gmi_model* g = gmi_load(".null");
-  apf::Mesh2* m = apf::makeEmptyMdsMesh(g, 2, false);
   if (argc < 2 || argc > 4)
   {
     std::cerr << "Error: wrong number of arguments" << std::endl;
@@ -94,12 +91,16 @@ int main(int argc, char** argv)
   }
 
   Counts counts = {numElx, numEly};
-  Periodic periodic = {true, true};
+  bool xperiodic = true;  // make x direction periodic
+  bool yperiodic = false; // make y direction periodic
+  // making x direction direction periodic mean setting edges along y 
+  // axis to match, hence the reversal
+  Periodic periodic = {yperiodic, xperiodic};
 
-  double xmin = 0.0;
-  double ymin = -5.0;
-  double xdist = 20;  // xmax - xmin
-  double ydist = 10;  // ymax - ymin
+  double xmin = 1.0;
+  double ymin = 1.0;
+  double xdist = 2;  // xmax - xmin
+  double ydist = 2;  // ymax - ymin
   double x_spacing = xdist/numElx;  // spacing of el
   double y_spacing = ydist/numEly;
   double x_0 = xmin;  // x coordinate of lower left corner of current element
@@ -110,6 +111,10 @@ int main(int argc, char** argv)
   double y_inner = y_i;
   double pert_fac = 10*M_PI;
   double pert_mag = 0.1;
+
+  bool isMatched = false;
+  if (periodic.x || periodic.y)
+    isMatched = true;
 
   std::cout << "SIZE_MAX = " << SIZE_MAX << std::endl;
   std::cout << "about to allocate memory" << std::endl;
@@ -129,6 +134,10 @@ int main(int argc, char** argv)
   apf::ModelEntity* model_entity;  // the model entity itself
 
   std::cout << "Creating " << numElx << " by " << numEly << " mesh" << std::endl;
+
+  gmi_register_null();
+  gmi_model* g = gmi_load(".null");
+  apf::Mesh2* m = apf::makeEmptyMdsMesh(g, 2, isMatched);
 
   // create all vertices
   for (int j = 0; j < (numEly+1); ++j)  // loop up columns (bottom to top)
@@ -474,6 +483,7 @@ int main(int argc, char** argv)
   m->verify();
   std::cout << "verified" << std::endl;
 
+
   apf::FieldShape* linear2 = apf::getLagrange(1);
   apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
 
@@ -481,9 +491,28 @@ int main(int argc, char** argv)
   apf::FieldShape* m_shape = m->getShape();
   std::cout << "mesh shape name = " << m_shape->getName() << std::endl;
 
+  printMatches(m, periodic);
   // write output and clean up
   apf::writeVtkFiles("outTri", m);
   m->writeNative("./meshfiles/abc.smb");
+
+  // print geometric classification of periodic edges
+  apf::MeshIterator* it = m->begin(1);
+  apf::MeshEntity* e;
+  apf::ModelEntity* me;
+  while ( (e = m->iterate(it)) )
+  {
+    apf::Matches matches;
+    m->getMatches(e, matches);
+    if (matches.getSize() > 0)
+    {
+      me = m->toModel(e);
+      int me_dim = m->getModelType(me);
+      int me_tag = m->getModelTag(me);
+      std::cout << "model dim " << me_dim << ", " << "model tag " << me_tag << std::endl;
+    }
+  }
+
 
   m->destroyNative();
   apf::destroyMesh(m);
@@ -685,19 +714,25 @@ apf::MeshEntity* getEdge(apf::Mesh* m, apf::MeshEntity* v1, apf::MeshEntity* v2)
 void printMatches(apf::Mesh* m, Periodic periodic)
 {
   std::cout << std::endl;
+  apf::Sharing* shr = getSharing(m);
   if (periodic.x)
   {
-    apf::MeshIterator* it = m->begin(0);
-    apf::MeshEntity* e;
-    while ( (e = m->iterate(it)) )
+    for (int dim=0; dim < 3; ++dim)
     {
-      apf::Matches matches;
-      m->getMatches(e, matches);
-      for (apf::Matches::iterator it = matches.begin(); it != matches.end(); ++it)
+      std::cout << "\nchecking entities of dimension " << dim << std::endl;
+      apf::MeshIterator* it = m->begin(dim);
+      apf::MeshEntity* e;
+      while ( (e = m->iterate(it)) )
       {
-        std::cout << "entity " << e << " is matched to " << it->entity << std::endl;
+        apf::Matches matches;
+        m->getMatches(e, matches);
+        for (apf::Matches::iterator it = matches.begin(); it != matches.end(); ++it)
+          std::cout << "entity " << e << " is matched to " << it->entity << std::endl;
+        if (dim == 0)
+          std::cout << "is entity owned: " << shr->isOwned(e) << std::endl;
       }
     }
   }
 } // function printMatches
-      
+     
+

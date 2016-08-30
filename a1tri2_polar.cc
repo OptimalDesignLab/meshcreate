@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include <limits.h>
 //#include "funcs1.h"
-#include "apfSBPShape.h"
+//#include "apfSBPShape.h"
 
 struct _Periodic {
   bool r;
@@ -49,10 +49,7 @@ int main(int argc, char** argv)
 
   MPI_Init(&argc,&argv);
   PCU_Comm_Init();
-  gmi_register_null();
-  gmi_model* g = gmi_load(".null");
-  apf::Mesh2* m = apf::makeEmptyMdsMesh(g, 2, false);
-  
+ 
   // Problem 3
   std::cout << "Problem 3 output: " << std::endl;
 //  double pi = 3.14159265;
@@ -90,7 +87,11 @@ int main(int argc, char** argv)
   }
 
   Counts counts = {numElr, numEltheta};
-  Periodic periodic = {true, true};
+  bool rperiodic = true;  // make r direction periodic
+  bool thetaperiodic true; // make theta direction periodic
+  // making r direction periodic means setting the edges along the theta 
+  // axis to match, hence the reversal
+  Periodic periodic = {thetaperiodic, rperiodic};
 
   double r_range = 2.0;  // rmax - rmin
   double theta_range = M_PI/2.0;  // theta max - theta min
@@ -108,6 +109,9 @@ int main(int argc, char** argv)
     vertices[i] = (apf::MeshEntity**) calloc(numEltheta+1, sizeof(apf::MeshEntity*));
   }
 
+  bool isMatched = false;
+  if (periodic.r || periodic.theta)
+    isMatched = true;
   
   apf::MeshEntity* vertices_i[3];  // hold vertices for a particular element
   apf::Vector3 coords_i(0.0,0.0,0.0);  // hold coordinates of each point
@@ -121,7 +125,10 @@ int main(int argc, char** argv)
   std::cout << "numElr = " << numElr << std::endl;
   std::cout << "numEltheta = " << numEltheta << " theta_spacing = " << theta_spacing << std::endl;
 
-
+  gmi_register_null();
+  gmi_model* g = gmi_load(".null");
+  apf::Mesh2* m = apf::makeEmptyMdsMesh(g, 2, isMatched);
+  
   // create all vertices
   for (int j = 0; j < (numEltheta+1); ++j)  // loop from inner radius to outer
   {
@@ -455,13 +462,14 @@ int main(int argc, char** argv)
   m->verify();
   std::cout << "verified" << std::endl;
 
- // for quadratic meshes
-    apf::FieldShape* linear2 = apf::getSBPShape(1);
+  apf::FieldShape* linear2 = apf::getLagrange(1);
   apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
 
   std::cout << "changed mesh shape" << std::endl;
   apf::FieldShape* m_shape = m->getShape();
   std::cout << "mesh shape name = " << m_shape->getName() << std::endl;
+
+
 
   // write output and clean up
   apf::writeVtkFiles("outTri", m);
