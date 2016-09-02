@@ -92,7 +92,7 @@ int main(int argc, char** argv)
 
   Counts counts = {numElx, numEly};
   bool xperiodic = true;  // make x direction periodic
-  bool yperiodic = false; // make y direction periodic
+  bool yperiodic = true; // make y direction periodic
   // making x direction direction periodic mean setting edges along y 
   // axis to match, hence the reversal
   Periodic periodic = {yperiodic, xperiodic};
@@ -491,28 +491,10 @@ int main(int argc, char** argv)
   apf::FieldShape* m_shape = m->getShape();
   std::cout << "mesh shape name = " << m_shape->getName() << std::endl;
 
-  printMatches(m, periodic);
+//  printMatches(m, periodic);
   // write output and clean up
   apf::writeVtkFiles("outTri", m);
   m->writeNative("./meshfiles/abc.smb");
-
-  // print geometric classification of periodic edges
-  apf::MeshIterator* it = m->begin(1);
-  apf::MeshEntity* e;
-  apf::ModelEntity* me;
-  while ( (e = m->iterate(it)) )
-  {
-    apf::Matches matches;
-    m->getMatches(e, matches);
-    if (matches.getSize() > 0)
-    {
-      me = m->toModel(e);
-      int me_dim = m->getModelType(me);
-      int me_tag = m->getModelTag(me);
-      std::cout << "model dim " << me_dim << ", " << "model tag " << me_tag << std::endl;
-    }
-  }
-
 
   m->destroyNative();
   apf::destroyMesh(m);
