@@ -97,10 +97,10 @@ int main(int argc, char** argv)
   // axis to match, hence the reversal
   Periodic periodic = {yperiodic, xperiodic};
 
-  double xmin = 1.0;
-  double ymin = 1.0;
-  double xdist = 2;  // xmax - xmin
-  double ydist = 2;  // ymax - ymin
+  double xmin = 0.0;
+  double ymin = -5;
+  double xdist = 20;  // xmax - xmin
+  double ydist = 10;  // ymax - ymin
   double x_spacing = xdist/numElx;  // spacing of el
   double y_spacing = ydist/numEly;
   double x_0 = xmin;  // x coordinate of lower left corner of current element

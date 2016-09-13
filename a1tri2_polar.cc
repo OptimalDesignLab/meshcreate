@@ -88,7 +88,7 @@ int main(int argc, char** argv)
 
   Counts counts = {numElr, numEltheta};
   bool rperiodic = true;  // make r direction periodic
-  bool thetaperiodic true; // make theta direction periodic
+  bool thetaperiodic = true; // make theta direction periodic
   // making r direction periodic means setting the edges along the theta 
   // axis to match, hence the reversal
   Periodic periodic = {thetaperiodic, rperiodic};
@@ -473,7 +473,7 @@ int main(int argc, char** argv)
 
   // write output and clean up
   apf::writeVtkFiles("outTri", m);
-  m->writeNative("./meshfiles/");
+  m->writeNative("./meshfiles/abc.smb");
 
   m->destroyNative();
   apf::destroyMesh(m);

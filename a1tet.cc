@@ -390,9 +390,9 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  double xmin = 1.5;
-  double ymin = 1.5;
-  double zmin = 1.5;
+  double xmin = 0.0;
+  double ymin = 0.0;
+  double zmin = 0.0;
   double xdist = 1;  // xmax - xmin
   double ydist = 1;  // ymax - ymin
   double zdist = 1;
@@ -413,9 +413,9 @@ int main(int argc, char** argv)
   double pert_fac = 10*M_PI;
   double pert_mag = 0.1;
 
-  bool xzperiodic = false;
+  bool xzperiodic = true;
   bool xyperiodic = true;
-  bool yzperiodic = false;
+  bool yzperiodic = true;
   Periodic periodic = {.xz=xzperiodic, .xy=xyperiodic, .yz=yzperiodic};
 
   bool isMatched = false;
