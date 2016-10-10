@@ -413,9 +413,9 @@ int main(int argc, char** argv)
   double pert_fac = 10*M_PI;
   double pert_mag = 0.1;
 
-  bool xzperiodic = true;
-  bool xyperiodic = true;
-  bool yzperiodic = true;
+  bool xzperiodic = false;
+  bool xyperiodic = false;
+  bool yzperiodic = false;
   Periodic periodic = {.xz=xzperiodic, .xy=xyperiodic, .yz=yzperiodic};
 
   bool isMatched = false;

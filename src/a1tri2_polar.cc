@@ -87,8 +87,8 @@ int main(int argc, char** argv)
   }
 
   Counts counts = {numElr, numEltheta};
-  bool rperiodic = true;  // make r direction periodic
-  bool thetaperiodic = true; // make theta direction periodic
+  bool rperiodic = false;  // make r direction periodic
+  bool thetaperiodic = false; // make theta direction periodic
   // making r direction periodic means setting the edges along the theta 
   // axis to match, hence the reversal
   Periodic periodic = {thetaperiodic, rperiodic};

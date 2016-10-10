@@ -8,11 +8,11 @@ for Pumi.
   `a1tet`: creates a regular mesh of tetrahedra on a square domain
 
 ## Compiling
-  The script `build.scorec.sh2` is used to build the programs.  To compile
-  `a1tri2.cc` for example, it is invoked as follows:
-```
-  ./build.scorec.sh2 a1tri2
-```
+  CMake is used internally to build all executables and install them to 
+  the `repo/install` directory.  They are also symlinked into the current
+  directory for ease of use.
+  The `config.sh` script configures the installation, and the `makeinstall.sh`
+  script builds and installs all executables.
 
 ## Running
 ### `a1tri2` (serial)
