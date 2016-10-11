@@ -13,6 +13,13 @@ for Pumi.
   directory for ease of use.
   The `config.sh` script configures the installation, and the `makeinstall.sh`
   script builds and installs all executables.
+  The environmental variable `SCOREC_PREFIX` can be used to specify 
+  a Pumi installation to link against.  If unspecified, CMakes
+  `find_package` function will be used to locate one.  Note that the 
+  `use_julialib.sh` script in PumiInterface will set `SCOREC_PREFIX` if needed
+  to ensure this package is linking against the same Pumi installation as 
+  PumiInterface.  In general, it is not required to link against the same
+  Pumi, although it seems like the most convenient thing to do.
 
 ## Running
 ### `a1tri2` (serial)
