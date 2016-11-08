@@ -89,3 +89,8 @@ for Pumi.
   Periodic mesh can be created by setting the boolean variable *periodic near
   the top of each source file.  Do not directly set the fields of the
   Periodic struct!
+
+## Other Utilities
+  The `renderit` program loads a specified mesh and model and writes a vtk file.
+  The `print_geo_coords` program loads a mesh and model and prints the coordinates
+  of all nodes on a specified geometric entity.

@@ -91,8 +91,8 @@ int main(int argc, char** argv)
   }
 
   Counts counts = {numElx, numEly};
-  bool xperiodic = false;  // make x direction periodic
-  bool yperiodic = false; // make y direction periodic
+  bool xperiodic = true;  // make x direction periodic
+  bool yperiodic = true; // make y direction periodic
   // making x direction direction periodic mean setting edges along y 
   // axis to match, hence the reversal
   Periodic periodic = {yperiodic, xperiodic};
