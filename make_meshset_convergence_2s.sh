@@ -1,9 +1,9 @@
 #!/bin/bash
 # variable to determine the number of elements
-first=50
-inc=5
-last=65
-name_prefix="unsteady_vortex_p1"
+first=6
+inc=2
+last=15
+name_prefix="pbox_p4_s"
 # control perturbation of mesh points
 perturb=0
 echo "perturb = $perturb"

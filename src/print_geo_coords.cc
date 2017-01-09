@@ -77,9 +77,9 @@ int main(int argc, char** argv)
 {
   MPI_Init(&argc,&argv);
   PCU_Comm_Init();
-  if ( argc != 5 ) {
+  if ( argc != 6 ) {
     if ( !PCU_Comm_Self() )
-      printf("Usage: %s <model> <mesh> <geomtric dimension> <geometric tag>\n", argv[0]);
+      printf("Usage: %s <model> <mesh> <geomtric dimension> <geometric tag> <out prefix>\n", argv[0]);
     MPI_Finalize();
     exit(EXIT_FAILURE);
   }
@@ -96,7 +96,7 @@ int main(int argc, char** argv)
 
 //  apf::FieldShape* fshape = apf::getLagrange(1);
 //  apf::changeMeshShape(m, fshape, false);
-//  apf::writeVtkFiles(argv[3], m);
+  apf::writeVtkFiles(argv[5], m);
   m->destroyNative();
   apf::destroyMesh(m);
   PCU_Comm_Free();

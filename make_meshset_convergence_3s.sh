@@ -7,9 +7,9 @@
 
 # variable to determine the number of elements
 first=5  # number of elements in each direction in the first mesh
-inc=1  # increment for the number of elements
+inc=3  # increment for the number of elements
 last=25  # number of elements in the last mesh
-name_prefix="cube2"  # the file name prefix
+name_prefix="cube_p1"  # the file name prefix
 perturb=0  # control perturbation of mesh points
 echo "perturb = $perturb"
 

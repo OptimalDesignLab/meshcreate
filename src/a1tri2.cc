@@ -6,6 +6,7 @@
 #include <apfNumbering.h>
 #include <apfShape.h>
 
+#include <cstdlib>
 #include <iostream>
 #include <stdbool.h>
 #include <limits.h>
@@ -97,10 +98,10 @@ int main(int argc, char** argv)
   // axis to match, hence the reversal
   Periodic periodic = {yperiodic, xperiodic};
 
-  double xmin = 0.0;
-  double ymin = -5;
-  double xdist = 20;  // xmax - xmin
-  double ydist = 10;  // ymax - ymin
+  double xmin = -1.0;
+  double ymin = -1.0;
+  double xdist = 2;  // xmax - xmin
+  double ydist = 2;  // ymax - ymin
   double x_spacing = xdist/numElx;  // spacing of el
   double y_spacing = ydist/numEly;
   double x_0 = xmin;  // x coordinate of lower left corner of current element
@@ -116,12 +117,11 @@ int main(int argc, char** argv)
   if (periodic.x || periodic.y)
     isMatched = true;
 
-  std::cout << "SIZE_MAX = " << SIZE_MAX << std::endl;
   std::cout << "about to allocate memory" << std::endl;
-  apf::MeshEntity*** vertices = (apf::MeshEntity***) calloc(numElx+1, sizeof(apf::MeshEntity**));
+  apf::MeshEntity*** vertices = (apf::MeshEntity***)std::calloc(numElx+1, sizeof(apf::MeshEntity**));
   for (int i = 0; i < (numElx+1); ++i)
   {
-    vertices[i] = (apf::MeshEntity**) calloc(numEly+1, sizeof(apf::MeshEntity*));
+    vertices[i] = (apf::MeshEntity**)std::calloc(numEly+1, sizeof(apf::MeshEntity*));
   }
 //  apf::MeshEntity* vertices[numElx+1][numEly+1];  // hold pointers to all vertices
   std::cout << "finished allocating memory" << std::endl;

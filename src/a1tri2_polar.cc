@@ -13,6 +13,8 @@
 //#include "funcs1.h"
 //#include "apfSBPShape.h"
 
+#include <cstdlib>
+
 struct _Periodic {
   bool r;
   bool theta;
@@ -103,10 +105,10 @@ int main(int argc, char** argv)
   double theta_i = theta_0;
 
 //  apf::MeshEntity* vertices[numElr+1][numEltheta+1];  // hold pointers to all verticesa
-  apf::MeshEntity*** vertices = (apf::MeshEntity***) calloc(numElr+1, sizeof(apf::MeshEntity**));
+  apf::MeshEntity*** vertices = (apf::MeshEntity***)std::calloc(numElr+1, sizeof(apf::MeshEntity**));
   for (int i = 0; i < (numElr+1); ++i)
   {
-    vertices[i] = (apf::MeshEntity**) calloc(numEltheta+1, sizeof(apf::MeshEntity*));
+    vertices[i] = (apf::MeshEntity**)std::calloc(numEltheta+1, sizeof(apf::MeshEntity*));
   }
 
   bool isMatched = false;

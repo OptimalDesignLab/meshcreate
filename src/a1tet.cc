@@ -6,6 +6,7 @@
 #include <apfNumbering.h>
 #include <apfShape.h>
 
+#include <cstdlib>
 #include <iostream>
 #include <stdbool.h>
 #include <limits.h>
@@ -250,6 +251,11 @@ void countMatches2(apf::Mesh* m, apf::MeshEntity**** verts, Sizes sizes);
 
 VertIdx findin(apf::MeshEntity**** verts, Sizes sizes, apf::MeshEntity* e);
 
+// verify that the volume of the cube is the sum of the volume of the elements
+void checkVolume(apf::Mesh* m, double volume_expected);
+
+void cross_product(double r1[3], double r2[3], double r3[3]);
+
 class FaceCallback : public apf::BuildCallback
 {
   public:
@@ -390,12 +396,13 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  double xmin = 0.0;
-  double ymin = 0.0;
-  double zmin = 0.0;
-  double xdist = 1;  // xmax - xmin
-  double ydist = 1;  // ymax - ymin
-  double zdist = 1;
+  double xmin = -1.0;
+  double ymin = -1.0;
+  double zmin = -1.0;
+  double xdist = 2;  // xmax - xmin
+  double ydist = 2;  // ymax - ymin
+  double zdist = 2;
+  double volume_expected = xdist*ydist*zdist;
   double x_spacing = xdist/numElx;  // spacing of el
   double y_spacing = ydist/numEly;
   double z_spacing = zdist/numElz;
@@ -413,9 +420,9 @@ int main(int argc, char** argv)
   double pert_fac = 10*M_PI;
   double pert_mag = 0.1;
 
-  bool xzperiodic = false;
-  bool xyperiodic = false;
-  bool yzperiodic = false;
+  bool xzperiodic = true;
+  bool xyperiodic = true;
+  bool yzperiodic = true;
   Periodic periodic = {.xz=xzperiodic, .xy=xyperiodic, .yz=yzperiodic};
 
   bool isMatched = false;
@@ -424,13 +431,13 @@ int main(int argc, char** argv)
 
 //  std::cout << "SIZE_MAX = " << SIZE_MAX << std::endl;
   std::cout << "about to allocate memory" << std::endl;
-  apf::MeshEntity**** vertices = (apf::MeshEntity****) calloc(numElx+1, sizeof(apf::MeshEntity***));
+  apf::MeshEntity**** vertices = (apf::MeshEntity****) std::calloc(numElx+1, sizeof(apf::MeshEntity***));
   for (int i = 0; i < (numElx+1); ++i)
   {
-    vertices[i] = (apf::MeshEntity***) calloc(numEly+1, sizeof(apf::MeshEntity**));
+    vertices[i] = (apf::MeshEntity***) std::calloc(numEly+1, sizeof(apf::MeshEntity**));
     for (int j = 0; j < (numEly+1); ++j)
     {
-      vertices[i][j] = (apf::MeshEntity**) calloc(numElz+1, sizeof(apf::MeshEntity*));
+      vertices[i][j] = (apf::MeshEntity**) std::calloc(numElz+1, sizeof(apf::MeshEntity*));
     }
     
   }
@@ -542,6 +549,7 @@ int main(int argc, char** argv)
   std::cout << "accepted changes" << std::endl;
   checkMeshFaces(m);
   checkMesh(m, sizes, counts);
+  checkVolume(m, volume_expected);
   m->verify();
   std::cout << "verified" << std::endl;
   double verify_telapsed = get_time() - t_verify_start;
@@ -2544,4 +2552,75 @@ VertIdx findin(apf::MeshEntity**** verts, Sizes sizes, apf::MeshEntity* e)
       }
 
   return VertIdxc(-1, -1, -1);
+}
+
+// verify that the volume of the cube is the sum of the volume of the elements
+void checkVolume(apf::Mesh* m, double volume_expected)
+{
+  double volume_calc = 0;
+
+  apf::MeshIterator* it = m->begin(3);  // iterator over elements
+  apf::MeshEntity* el;  // current element
+  apf::Downward verts; // vertices of current element
+  apf::Vector3 vert_coords; // coordinates of current vertex
+  apf::Vector3 vert_coords2; // coordinates of another vertex
+
+  // basis vectors
+  double r1[3];
+  double r2[3];
+  double r3[3];
+  double tmp[3];
+
+  int elnum = 0;
+  while ( (el = m->iterate(it)) )// loop over elements
+  {
+    m->getDownward(el, 0, verts);
+
+    // get first vert coords
+    m->getPoint(verts[0], 0, vert_coords);
+
+    // get other vert coords and compute basis vectors
+    m->getPoint(verts[1], 0, vert_coords2);
+    r1[0] = vert_coords2.x() - vert_coords.x();
+    r1[1] = vert_coords2.y() - vert_coords.y();
+    r1[2] = vert_coords2.z() - vert_coords.z();
+
+    m->getPoint(verts[2], 0, vert_coords2);
+    r2[0] = vert_coords2.x() - vert_coords.x();
+    r2[1] = vert_coords2.y() - vert_coords.y();
+    r2[2] = vert_coords2.z() - vert_coords.z();
+
+    m->getPoint(verts[3], 0, vert_coords2);
+    r3[0] = vert_coords2.x() - vert_coords.x();
+    r3[1] = vert_coords2.y() - vert_coords.y();
+    r3[2] = vert_coords2.z() - vert_coords.z();
+
+    cross_product(r2, r3, tmp);
+
+    double dot_val = r1[0]*tmp[0] + r1[1]*tmp[1] + r1[2]*tmp[2];
+ //   if (dot_val < 0)
+ //     std::cout << "volume is negative for element " << elnum << std::endl;
+
+    dot_val = dot_val/6;
+    volume_calc += dot_val;
+
+    elnum += 1;
+
+  }
+
+  std::cout << "expected volume = " << volume_expected << std::endl;
+  std::cout << "volume calc = " << volume_calc << std::endl;
+
+  if (abs(volume_calc - volume_expected) > 1e-12)
+  {
+    std::cout << "Warning: volume mismatch, volume expected = " << volume_expected << ", volume calc = " << volume_calc << std::endl;
+  }
+
+} // end function
+
+void cross_product(double r1[3], double r2[3], double r3[3])
+{
+  r3[0] = r1[1]*r2[2] - r1[2]*r2[1];
+  r3[1] = -(r1[0]*r2[2] - r1[2]*r2[0]);
+  r3[2] = r1[0]*r2[1] - r1[1]*r2[0];
 }
