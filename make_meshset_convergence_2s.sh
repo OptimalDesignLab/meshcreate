@@ -3,7 +3,7 @@
 first=6
 inc=2
 last=15
-name_prefix="pbox_p4_s"
+name_prefix="square_p1_s"
 # control perturbation of mesh points
 perturb=0
 echo "perturb = $perturb"

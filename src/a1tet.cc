@@ -396,12 +396,12 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  double xmin = -1.0;
-  double ymin = -1.0;
-  double zmin = -1.0;
-  double xdist = 2;  // xmax - xmin
-  double ydist = 2;  // ymax - ymin
-  double zdist = 2;
+  double xmin = -M_PI;
+  double ymin = -M_PI;
+  double zmin = -M_PI;
+  double xdist = 2*M_PI;  // xmax - xmin
+  double ydist = 2*M_PI;  // ymax - ymin
+  double zdist = 2*M_PI;
   double volume_expected = xdist*ydist*zdist;
   double x_spacing = xdist/numElx;  // spacing of el
   double y_spacing = ydist/numEly;
