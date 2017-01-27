@@ -41,6 +41,7 @@ add_executable(a1tri2_polar a1tri2_polar.cc)
 add_executable(a1tet a1tet.cc)
 add_executable(renderit renderit.cc)
 add_executable(print_geo_coords print_geo_coords.cc)
+add_executable(verify verify.cc)
 
 #for any targets that use PUMI, just use this command
 #to it to include the right directories and link to all
@@ -53,4 +54,5 @@ target_link_libraries(a1tri2_polar PRIVATE SCOREC::core)
 target_link_libraries(a1tet PRIVATE SCOREC::core)
 target_link_libraries(renderit PRIVATE SCOREC::core)
 target_link_libraries(print_geo_coords PRIVATE SCOREC::core)
-install (TARGETS a1tri2 a1tri2_polar a1tet renderit print_geo_coords DESTINATION bin)
+target_link_libraries(verify PRIVATE SCOREC::core)
+install (TARGETS a1tri2 a1tri2_polar a1tet renderit print_geo_coords verify DESTINATION bin)

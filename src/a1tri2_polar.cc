@@ -10,6 +10,7 @@
 #include <cmath>  // trig functions
 #include <stdbool.h>
 #include <limits.h>
+#include<cassert>
 //#include "funcs1.h"
 //#include "apfSBPShape.h"
 
@@ -30,6 +31,8 @@ typedef struct _Counts Counts;
 void checkMesh(apf::Mesh* m);
 void setMatches(apf::Mesh2*m, apf::MeshEntity*** verts, Periodic periodic, Counts counts);
 apf::MeshEntity* getEdge(apf::Mesh* m, apf::MeshEntity* v1, apf::MeshEntity* v2);
+
+void curveEdges(apf::Mesh2* m);
 
 // create a mesh for a sector of a circle
 // all angles measured in radians
@@ -464,13 +467,14 @@ int main(int argc, char** argv)
   m->verify();
   std::cout << "verified" << std::endl;
 
-  apf::FieldShape* linear2 = apf::getLagrange(1);
+  apf::FieldShape* linear2 = apf::getLagrange(2);
   apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
 
   std::cout << "changed mesh shape" << std::endl;
   apf::FieldShape* m_shape = m->getShape();
   std::cout << "mesh shape name = " << m_shape->getName() << std::endl;
 
+  curveEdges(m);
 
 
   // write output and clean up
@@ -578,4 +582,55 @@ apf::MeshEntity* getEdge(apf::Mesh* m, apf::MeshEntity* v1, apf::MeshEntity* v2)
 
 }  // function getEdge
 
- 
+// set the location of the mid edge nodes
+void curveEdges(apf::Mesh2* m)
+{
+  apf::FieldShape* fshape = m->getShape();
+  assert( fshape->getOrder() == 2);
+
+  apf::MeshEntity* edge;  // current edge
+  apf::Downward verts;  // downward verts
+  apf::MeshEntity *v1, *v2;  // the verts themselves
+  apf::Vector3 v1coords;  // vert 1 coordinates
+  apf::Vector3 v2coords;  // vert 2 coordinates
+  apf::Vector3 v3coords; // mid edge node coordinates
+  double coords[3]; // mid edge node coordinate
+  double r1, theta1, r2, theta2, r3, theta3;
+  
+  apf::MeshIterator* it = m->begin(1);
+  while ( (edge = m->iterate(it)) )
+  {
+    m->getDownward(edge, 0, verts);
+    v1 = verts[0];
+    v2 = verts[1];
+
+    m->getPoint(v1, 0, v1coords);
+    m->getPoint(v2, 0, v2coords);
+
+    // calculate r, theta coordinates of both points
+    r1 = std::sqrt(v1coords.x()*v1coords.x() + v1coords.y()*v1coords.y());
+    r2 = sqrt(v2coords.x()*v2coords.x() + v2coords.y()*v2coords.y());
+    theta1 = atan2( v1coords.y(), v1coords.x());
+    theta2 = atan2( v2coords.y(), v2coords.x());
+
+    std::cout << "vertex 1 (x, y) = " << v1coords.x() << ", " << v1coords.y() << std::endl;
+    std::cout << "vertex 2 (x, y) = " << v2coords.x() << ", " << v2coords.y() << std::endl;
+
+    double delta_theta = std::abs(theta1 - theta2);
+    std::cout << "delta theta = " << delta_theta << std::endl;
+
+    if ((std::abs(theta1 - theta2) > 1e-10) && std::abs(r1 - r2) < 1e-10)
+    {
+      r3 = r1;  // the r values should be the same
+      theta3 = 0.5*(theta1 + theta2);
+      std::cout << "moving edge node to r = " << r3 << ", theta = " << theta3 << std::endl;
+      coords[0] = r3*cos(theta3);
+      coords[1] = r3*sin(theta3);
+      coords[2] = v1coords.z();
+      v3coords.fromArray(coords);
+      m->setPoint(edge, 0, v3coords);
+    }
+  }
+
+} // function curveEdges
+
