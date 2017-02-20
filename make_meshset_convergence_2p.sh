@@ -8,9 +8,9 @@
 # variable to determine the number of elements
 first=6  # number of elements in each direction in the first mesh
 inc=2  # increment for the number of elements
-last=15  # number of elements in the last mesh
+last=14  # number of elements in the last mesh
 nproc=4  # number of processors to partition the mesh into
-name_prefix="pbox_p4_p"  # the file name prefix
+name_prefix="psquare_p_linear"  # the file name prefix
 perturb=0  # control perturbation of mesh points
 echo "perturb = $perturb"
 

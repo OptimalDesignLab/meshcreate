@@ -25,10 +25,24 @@ struct _Counts {
 };
 typedef struct _Counts Counts;
 
+struct _DomainSize {
+  double xmin;
+  double xmax;
+  double ymin;
+  double ymax;
+};
+typedef struct _DomainSize DomainSize;
+
 void checkMesh(apf::Mesh* m);
 void setMatches(apf::Mesh2*m, apf::MeshEntity*** verts, Periodic periodic, Counts counts);
 apf::MeshEntity* getEdge(apf::Mesh* m, apf::MeshEntity* v1, apf::MeshEntity* v2);
 void printMatches(apf::Mesh* m, Periodic periodic);
+
+/* functions for applying coordinate mapping */
+void remapCoordinates(apf::Mesh2* m, DomainSize domainsize);
+void nondimensionalize(DomainSize domainsize, apf::Vector3& coords);
+void redimensionalize(DomainSize domainsize, apf::Vector3& coords);
+void mapFunction(DomainSize domainsize, apf::Vector3& coords);
 
 // the program creates a cartesian mesh composed to triangles.
 // The mesh is created by subdividing each rectangle into two triangles
@@ -92,16 +106,18 @@ int main(int argc, char** argv)
   }
 
   Counts counts = {numElx, numEly};
-  bool xperiodic = false;  // make x direction periodic
-  bool yperiodic = false; // make y direction periodic
+  bool xperiodic = true;  // make x direction periodic
+  bool yperiodic = true; // make y direction periodic
   // making x direction direction periodic mean setting edges along y 
   // axis to match, hence the reversal
   Periodic periodic = {yperiodic, xperiodic};
 
-  double xmin = 0;
-  double ymin = -5;
-  double xdist = 20;  // xmax - xmin
-  double ydist = 10;  // ymax - ymin
+  int coord_order = 2;  // coordinate field polynomial order
+
+  double xmin = -1;
+  double ymin = -1;
+  double xdist = 2;  // xmax - xmin
+  double ydist = 2;  // ymax - ymin
   double x_spacing = xdist/numElx;  // spacing of el
   double y_spacing = ydist/numEly;
   double x_0 = xmin;  // x coordinate of lower left corner of current element
@@ -112,6 +128,8 @@ int main(int argc, char** argv)
   double y_inner = y_i;
   double pert_fac = 10*M_PI;
   double pert_mag = 0.1;
+
+  DomainSize domainsize = {xmin, xmin + xdist, ymin, ymin + ydist};
 
   bool isMatched = false;
   if (periodic.x || periodic.y)
@@ -476,20 +494,23 @@ int main(int argc, char** argv)
 
   // set periodic boundaries if needed
   setMatches(m, vertices, periodic, counts);
-  
+ 
+  // make the coordinate field the requested order
+  apf::FieldShape* linear2 = apf::getLagrange(coord_order);
+  apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
+  remapCoordinates(m, domainsize);
+
+  std::cout << "changed mesh shape" << std::endl;
+  apf::FieldShape* m_shape = m->getShape();
+  std::cout << "mesh shape name = " << m_shape->getName() << std::endl;
+
+ 
   m->acceptChanges();
   std::cout << "accepted changes" << std::endl;
   checkMesh(m);
   m->verify();
   std::cout << "verified" << std::endl;
 
-
-  apf::FieldShape* linear2 = apf::getLagrange(1);
-  apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
-
-  std::cout << "changed mesh shape" << std::endl;
-  apf::FieldShape* m_shape = m->getShape();
-  std::cout << "mesh shape name = " << m_shape->getName() << std::endl;
 
 //  printMatches(m, periodic);
   // write output and clean up
@@ -717,4 +738,84 @@ void printMatches(apf::Mesh* m, Periodic periodic)
   }
 } // function printMatches
      
+// this function applies a mapping to the coordinate field of the form:
+//    x -> x* -> f(x*) -> x'
+// where x is the original coordinate, x* is a nondimensionalized coordinate in
+// the range [0, 1], f() is a function that maps x* to another value in
+// the range [0, 1], and x' converts the (nondimensional) output of f() back
+// to a dimensional value
+// An inner function is called that determines f().  This function can be
+// modified by the user, but remapCoordinates itself should not be modified.
+void remapCoordinates(apf::Mesh2* m, DomainSize domainsize)
+{
+  apf::FieldShape* fshape = m->getShape();
+  apf::MeshIterator* it;
+  apf::MeshEntity* e;
+  int maxdim = m->getDimension();
+  apf::Vector3 coords;
 
+  for (int dim = 0; dim <= maxdim; dim++)
+  {
+    if ( !fshape->hasNodesIn(dim) )
+      continue;
+
+    // if we get here, there are nodes in this dimension
+    it = m->begin(dim);
+    while ( (e = m->iterate(it)) )
+    {
+      int nnodes = fshape->countNodesOn(m->getType(e));
+
+      for (int node = 0; node < nnodes; node++)
+      {
+        m->getPoint(e, node, coords);
+        nondimensionalize(domainsize, coords);
+        mapFunction(domainsize, coords);
+        redimensionalize(domainsize, coords);
+        m->setPoint(e, node, coords);
+      }
+    }  // end while loop
+
+  }  // end for dim
+
+
+}  // function remapCoordinates
+
+void nondimensionalize(DomainSize domainsize, apf::Vector3& coords)
+{
+  double x = coords[0];
+  double y = coords[1];
+
+  const double delta_x = domainsize.xmax - domainsize.xmin;
+  const double delta_y = domainsize.ymax - domainsize.ymin;
+
+  x = (x - domainsize.xmin)/delta_x;
+  y = (y - domainsize.ymin)/delta_y;
+
+  coords[0] = x;
+  coords[1] = y;
+
+}  // function nondimensionalize
+
+void redimensionalize(DomainSize domainsize, apf::Vector3& coords)
+{
+  double x = coords[0];
+  double y = coords[1];
+
+  const double delta_x = domainsize.xmax - domainsize.xmin;
+  const double delta_y = domainsize.ymax - domainsize.ymin;
+
+  x = x*delta_x + domainsize.xmin;
+  y = y*delta_y + domainsize.ymin;
+
+  coords[0] = x;
+  coords[1] = y;
+
+}  // function redimensionalize
+
+// a function f that performs mapping x* - f(x*), where x* is the nondimensional
+// coordinates (x and y)
+void mapFunction(DomainSize domainsize, apf::Vector3& coords)
+{
+  coords[0] = sin( (M_PI*0.5)*coords[0] );
+  coords[1] = sin( (M_PI*0.5)*coords[1] );
+}  // function mapFunction
