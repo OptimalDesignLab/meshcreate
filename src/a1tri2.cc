@@ -30,6 +30,8 @@ struct _DomainSize {
   double xmax;
   double ymin;
   double ymax;
+  int numElx;
+  int numEly;
 };
 typedef struct _DomainSize DomainSize;
 
@@ -112,12 +114,12 @@ int main(int argc, char** argv)
   // axis to match, hence the reversal
   Periodic periodic = {yperiodic, xperiodic};
 
-  int coord_order = 2;  // coordinate field polynomial order
+  int coord_order = 1;  // coordinate field polynomial order
 
-  double xmin = -1;
-  double ymin = -1;
-  double xdist = 2;  // xmax - xmin
-  double ydist = 2;  // ymax - ymin
+  double xmin = 0;
+  double ymin = -5;
+  double xdist = 20;  // xmax - xmin
+  double ydist = 10;  // ymax - ymin
   double x_spacing = xdist/numElx;  // spacing of el
   double y_spacing = ydist/numEly;
   double x_0 = xmin;  // x coordinate of lower left corner of current element
@@ -129,7 +131,7 @@ int main(int argc, char** argv)
   double pert_fac = 10*M_PI;
   double pert_mag = 0.1;
 
-  DomainSize domainsize = {xmin, xmin + xdist, ymin, ymin + ydist};
+  DomainSize domainsize = {xmin, xmin + xdist, ymin, ymin + ydist, numElx, numEly};
 
   bool isMatched = false;
   if (periodic.x || periodic.y)
@@ -498,6 +500,7 @@ int main(int argc, char** argv)
   // make the coordinate field the requested order
   apf::FieldShape* linear2 = apf::getLagrange(coord_order);
   apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
+  std::cout << "remapping coordinates" << std::endl;
   remapCoordinates(m, domainsize);
 
   std::cout << "changed mesh shape" << std::endl;
@@ -754,6 +757,8 @@ void remapCoordinates(apf::Mesh2* m, DomainSize domainsize)
   int maxdim = m->getDimension();
   apf::Vector3 coords;
 
+//  int dim = 1;  // only do edges
+
   for (int dim = 0; dim <= maxdim; dim++)
   {
     if ( !fshape->hasNodesIn(dim) )
@@ -816,6 +821,20 @@ void redimensionalize(DomainSize domainsize, apf::Vector3& coords)
 // coordinates (x and y)
 void mapFunction(DomainSize domainsize, apf::Vector3& coords)
 {
+/*
+  // calculate the element size in the x and y directions in non-dimensional
+  // coordinates
+  double hx = 1/( (double)domainsize.numElx);
+  double hy = 1/( (double)domainsize.numEly);
+  double nwaves = 5;  // number of waves over the domain (periods of sin)
+  double amplitude = 0.2; // fraction of hx used as perturbation magnitude
+
+  // apply a small amplitude sin wave
+  coords[0] = coords[0] + amplitude*hx*sin( M_PI*coords[0]*2*nwaves);
+  coords[1] = coords[1] + amplitude*hy*sin( M_PI*coords[1]*2*nwaves);
+*/  
+  /*
   coords[0] = sin( (M_PI*0.5)*coords[0] );
   coords[1] = sin( (M_PI*0.5)*coords[1] );
+  */
 }  // function mapFunction

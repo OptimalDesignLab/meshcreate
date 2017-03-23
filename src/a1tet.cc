@@ -7,6 +7,7 @@
 #include <apfShape.h>
 
 #include <cstdlib>
+#include <cmath>
 #include <iostream>
 #include <stdbool.h>
 #include <limits.h>
@@ -62,6 +63,18 @@ struct _Periodic {
 };
 typedef struct _Periodic Periodic;
 
+struct _DomainSize {
+  double xmin;
+  double xmax;
+  double ymin;
+  double ymax;
+  double zmin;
+  double zmax;
+  int numElx;
+  int numEly;
+  int numElz;
+};
+typedef struct _DomainSize DomainSize;
 
 // addition on VertIdx
 VertIdx add(const VertIdx v1, const VertIdx v2);
@@ -256,6 +269,15 @@ void checkVolume(apf::Mesh* m, double volume_expected);
 
 void cross_product(double r1[3], double r2[3], double r3[3]);
 
+
+/* functions for applying coordinate mapping */
+void remapCoordinates(apf::Mesh2* m, DomainSize domainsize);
+void nondimensionalize(DomainSize domainsize, apf::Vector3& coords);
+void redimensionalize(DomainSize domainsize, apf::Vector3& coords);
+void mapFunction(DomainSize domainsize, apf::Vector3& coords);
+
+
+
 class FaceCallback : public apf::BuildCallback
 {
   public:
@@ -371,6 +393,7 @@ int main(int argc, char** argv)
   std::cout << "expected entity counts: " << std::endl;
   std::cout << "  Vertices: " << nvert << std::endl;
   std::cout << "  Edges: " << nedges << std::endl;
+  std::cout << "  Faces: " << nfaces << std::endl;
   std::cout << "  Elements: " << nel << std::endl;
 
   if (nvert > INT_MAX)
@@ -395,6 +418,8 @@ int main(int argc, char** argv)
     std::cerr << "Error: number of elements will overflow 32-bit integer" << std::endl;
     return 1;
   }
+
+  int coord_order = 2;  // coordinate field polynomial order
 
   double xmin = -M_PI;
   double ymin = -M_PI;
@@ -428,6 +453,9 @@ int main(int argc, char** argv)
   bool isMatched = false;
   if (periodic.xz || periodic.xy || periodic.yz)
     isMatched = true;
+
+
+  DomainSize domainsize = {xmin, xmin + xdist, ymin, ymin + ydist, zmin, zmin + zdist, numElx, numEly, numElz};
 
 //  std::cout << "SIZE_MAX = " << SIZE_MAX << std::endl;
   std::cout << "about to allocate memory" << std::endl;
@@ -544,6 +572,16 @@ int main(int argc, char** argv)
   setMatches(m, vertices, periodic, sizes);
 //  countMatches2(m, vertices, sizes);
 
+  // make the coordinate field the requested order
+  apf::FieldShape* linear2 = apf::getLagrange(coord_order);
+  apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
+  std::cout << "remapping coordinates" << std::endl;
+  remapCoordinates(m, domainsize);
+
+  std::cout << "changed mesh shape" << std::endl;
+  apf::FieldShape* m_shape = m->getShape();
+  std::cout << "mesh shape name = " << m_shape->getName() << std::endl;
+
   double t_verify_start = get_time();
   m->acceptChanges();
   std::cout << "accepted changes" << std::endl;
@@ -554,12 +592,6 @@ int main(int argc, char** argv)
   std::cout << "verified" << std::endl;
   double verify_telapsed = get_time() - t_verify_start;
   std::cout << "total verification time: " << verify_telapsed << " seconds" << std::endl;
-  apf::FieldShape* linear2 = apf::getLagrange(1);
-  apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
-
-  std::cout << "changed mesh shape" << std::endl;
-  apf::FieldShape* m_shape = m->getShape();
-  std::cout << "mesh shape name = " << m_shape->getName() << std::endl;
 
   // write output and clean up
   apf::writeVtkFiles("outTet", m);
@@ -2624,3 +2656,128 @@ void cross_product(double r1[3], double r2[3], double r3[3])
   r3[1] = -(r1[0]*r2[2] - r1[2]*r2[0]);
   r3[2] = r1[0]*r2[1] - r1[1]*r2[0];
 }
+
+
+// this function applies a mapping to the coordinate field of the form:
+//    x -> x* -> f(x*) -> x'
+// where x is the original coordinate, x* is a nondimensionalized coordinate in
+// the range [0, 1], f() is a function that maps x* to another value in
+// the range [0, 1], and x' converts the (nondimensional) output of f() back
+// to a dimensional value
+// An inner function is called that determines f().  This function can be
+// modified by the user, but remapCoordinates itself should not be modified.
+void remapCoordinates(apf::Mesh2* m, DomainSize domainsize)
+{
+  apf::FieldShape* fshape = m->getShape();
+  apf::MeshIterator* it;
+  apf::MeshEntity* e;
+  int maxdim = m->getDimension();
+  apf::Vector3 coords;
+
+//  int dim = 1;  // only do edges
+
+  for (int dim = 0; dim <= maxdim; dim++)
+  {
+    if ( !fshape->hasNodesIn(dim) )
+      continue;
+
+    // if we get here, there are nodes in this dimension
+    it = m->begin(dim);
+    while ( (e = m->iterate(it)) )
+    {
+      int nnodes = fshape->countNodesOn(m->getType(e));
+
+      for (int node = 0; node < nnodes; node++)
+      {
+        m->getPoint(e, node, coords);
+        nondimensionalize(domainsize, coords);
+        mapFunction(domainsize, coords);
+        redimensionalize(domainsize, coords);
+        m->setPoint(e, node, coords);
+      }
+    }  // end while loop
+
+  }  // end for dim
+
+
+}  // function remapCoordinates
+
+void nondimensionalize(DomainSize domainsize, apf::Vector3& coords)
+{
+  double x = coords[0];
+  double y = coords[1];
+  double z = coords[2];
+
+  const double delta_x = domainsize.xmax - domainsize.xmin;
+  const double delta_y = domainsize.ymax - domainsize.ymin;
+  const double delta_z = domainsize.zmax - domainsize.zmin;
+
+  x = (x - domainsize.xmin)/delta_x;
+  y = (y - domainsize.ymin)/delta_y;
+  z = (z - domainsize.zmin)/delta_z;
+
+  coords[0] = x;
+  coords[1] = y;
+  coords[2] = z;
+
+}  // function nondimensionalize
+
+void redimensionalize(DomainSize domainsize, apf::Vector3& coords)
+{
+  double x = coords[0];
+  double y = coords[1];
+  double z = coords[2];
+
+  const double delta_x = domainsize.xmax - domainsize.xmin;
+  const double delta_y = domainsize.ymax - domainsize.ymin;
+  const double delta_z = domainsize.zmax - domainsize.zmin;
+
+  x = x*delta_x + domainsize.xmin;
+  y = y*delta_y + domainsize.ymin;
+  z = z*delta_z + domainsize.zmin;
+
+  coords[0] = x;
+  coords[1] = y;
+  coords[2] = z;
+
+}  // function redimensionalize
+
+// a function f that performs mapping x* - f(x*), where x* is the nondimensional
+// coordinates (x and y)
+void mapFunction(DomainSize domainsize, apf::Vector3& coords)
+{
+/*
+  if (fabs(coords[0]) < 1e-10 || fabs(coords[0] - 1) < 1e-10)
+  {
+    return;
+  }
+  if (fabs(coords[1]) < 1e-10 || fabs(coords[1] - 1) < 1e-10)
+  {
+    return;
+  }
+  if (fabs(coords[2]) < 1e-10 || fabs(coords[2] - 1) < 1e-10)
+  {
+    return;
+  }
+*/
+
+
+
+
+  // calculate the element size in the x and y directions in non-dimensional
+  // coordinates
+  double hx = 1/( (double)domainsize.numElx);
+  double hy = 1/( (double)domainsize.numEly);
+  double hz = 1/( (double)domainsize.numElz);
+  double nwaves = 5;  // number of waves over the domain (periods of sin)
+  double amplitude = 0.05; // fraction of hx used as perturbation magnitude
+
+  // apply a small amplitude sin wave
+  coords[0] = coords[0] + amplitude*hx*sin( M_PI*coords[0]*2*nwaves);
+  coords[1] = coords[1] + amplitude*hy*sin( M_PI*coords[1]*2*nwaves);
+  coords[2] = coords[2] + amplitude*hz*sin( M_PI*coords[2]*2*nwaves);
+  /*
+  coords[0] = sin( (M_PI*0.5)*coords[0] );
+  coords[1] = sin( (M_PI*0.5)*coords[1] );
+  */
+}  // function mapFunction
