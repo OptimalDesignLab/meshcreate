@@ -91,6 +91,7 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  int coord_order = 1;
   Counts counts = {numElr, numEltheta};
   bool rperiodic = false;  // make r direction periodic
   bool thetaperiodic = false; // make theta direction periodic
@@ -467,14 +468,15 @@ int main(int argc, char** argv)
   m->verify();
   std::cout << "verified" << std::endl;
 
-  apf::FieldShape* linear2 = apf::getLagrange(2);
+  apf::FieldShape* linear2 = apf::getLagrange(coord_order);
   apf::changeMeshShape(m, linear2, true);  // last argument should be true for second order
 
   std::cout << "changed mesh shape" << std::endl;
   apf::FieldShape* m_shape = m->getShape();
   std::cout << "mesh shape name = " << m_shape->getName() << std::endl;
 
-  curveEdges(m);
+  if (coord_order > 1)
+    curveEdges(m);
 
 
   // write output and clean up

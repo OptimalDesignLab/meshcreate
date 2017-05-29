@@ -8,8 +8,8 @@
 # variable to determine the number of elements
 first=1  # number of processes to start with
 inc=1  # increment for the number of processes
-last=4  # final number of processes
-name_prefix="strong8"  # the file name prefix
+last=16  # final number of processes
+name_prefix="strong_small"  # the file name prefix
 perturb=0  # control perturbation of mesh points
 echo "perturb = $perturb"
 

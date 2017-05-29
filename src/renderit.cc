@@ -21,8 +21,8 @@ int main(int argc, char** argv)
   gmi_register_mesh();
   gmi_register_null();
   apf::Mesh2* m = apf::loadMdsMesh(argv[1],argv[2]);
-  apf::FieldShape* fshape = apf::getLagrange(1);
-  apf::changeMeshShape(m, fshape, false);
+//  apf::FieldShape* fshape = apf::getLagrange(1);
+//  apf::changeMeshShape(m, fshape, false);
   apf::writeVtkFiles(argv[3], m);
   m->destroyNative();
   apf::destroyMesh(m);

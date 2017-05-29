@@ -419,14 +419,14 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  int coord_order = 2;  // coordinate field polynomial order
+  int coord_order = 1;  // coordinate field polynomial order
 
-  double xmin = -M_PI;
-  double ymin = -M_PI;
-  double zmin = -M_PI;
-  double xdist = 2*M_PI;  // xmax - xmin
-  double ydist = 2*M_PI;  // ymax - ymin
-  double zdist = 2*M_PI;
+  double xmin = -1;
+  double ymin = -1;
+  double zmin = -1;
+  double xdist = 2;  // xmax - xmin
+  double ydist = 2;  // ymax - ymin
+  double zdist = 2;
   double volume_expected = xdist*ydist*zdist;
   double x_spacing = xdist/numElx;  // spacing of el
   double y_spacing = ydist/numEly;
@@ -2763,7 +2763,7 @@ void mapFunction(DomainSize domainsize, apf::Vector3& coords)
 
 
 
-
+/*
   // calculate the element size in the x and y directions in non-dimensional
   // coordinates
   double hx = 1/( (double)domainsize.numElx);
@@ -2776,6 +2776,7 @@ void mapFunction(DomainSize domainsize, apf::Vector3& coords)
   coords[0] = coords[0] + amplitude*hx*sin( M_PI*coords[0]*2*nwaves);
   coords[1] = coords[1] + amplitude*hy*sin( M_PI*coords[1]*2*nwaves);
   coords[2] = coords[2] + amplitude*hz*sin( M_PI*coords[2]*2*nwaves);
+*/
   /*
   coords[0] = sin( (M_PI*0.5)*coords[0] );
   coords[1] = sin( (M_PI*0.5)*coords[1] );
