@@ -95,7 +95,27 @@ for Pumi.
   yz plane at ymin: 4
   xy plane at zmax: 5
 
-  TODO: add vertex and edge
+  The edges are classified as:
+  xmin to xmax at ymin, zmin: 0
+  ymin to ymax at xmax, zmin: 1
+  xmax to xmin at ymax, zmin: 2
+  ymax to ymin at xmin, zmin: 3
+
+  Edges 4 through 7 correspond to edges 0 through 3, respectively, at zmax.
+
+  zmin to zmax at xmin, ymin: 8
+               at xmax, ymin: 9
+               at xmax, ymax: 10
+               at xmin, ymax: 11
+
+  The vertices are classified as follows:
+  (xmin, ymin, zmin): 0
+  (xmax, ymin, zmin): 1
+  (xmax, ymax, zmin): 2
+  (xmin, ymax, zmin): 3
+
+  Vertices 4 through 7 correspond to vertices 0 through 3, respectively at zmax.
+
 ## Periodic Meshes
   Periodic mesh can be created by setting the boolean variable *periodic near
   the top of each source file.  Do not directly set the fields of the
