@@ -1,9 +1,9 @@
 #!/bin/bash
 # variable to determine the number of elements
-first=20
-inc=2
+first=5
+inc=5
 last=30
-name_prefix="vortexcurve_p1_s"
+name_prefix="periodiccurve_s"
 # control perturbation of mesh points
 perturb=0
 echo "perturb = $perturb"

@@ -109,19 +109,20 @@ int main(int argc, char** argv)
 
   Counts counts = {numElx, numEly};
   bool xperiodic = true;  // make x direction periodic
-  bool yperiodic = false; // make y direction periodic
+  bool yperiodic = true; // make y direction periodic
   // making x direction direction periodic mean setting edges along y 
   // axis to match, hence the reversal
   Periodic periodic = {yperiodic, xperiodic};
 
-  int coord_order = 1;  // coordinate field polynomial order
+  int coord_order = 2;  // coordinate field polynomial order
 
   double xmin = 0;
-  double ymin = 0;
-  double xdist = 1;  // xmax - xmin
-  double ydist = 1;  // ymax - ymin
+  double ymin = -5;
+  double xdist = 20;  // xmax - xmin
+  double ydist = 10;  // ymax - ymin
   double x_spacing = xdist/numElx;  // spacing of el
   double y_spacing = ydist/numEly;
+
   double x_0 = xmin;  // x coordinate of lower left corner of current element
   double y_0 = ymin ; // y coordinate of lower left corner of current element
   double x_i = x_0;
@@ -824,10 +825,11 @@ void mapFunction(DomainSize domainsize, apf::Vector3& coords)
 
   // calculate the element size in the x and y directions in non-dimensional
   // coordinates
+
   double hx = 1/( (double)domainsize.numElx);
   double hy = 1/( (double)domainsize.numEly);
   double nwaves = 5;  // number of waves over the domain (periods of sin)
-  double amplitude = 0.2; // fraction of hx used as perturbation magnitude
+  double amplitude = 0.5; // fraction of hx used as perturbation magnitude
 
   // apply a small amplitude sin wave
   coords[0] = coords[0] + amplitude*hx*sin( M_PI*coords[0]*2*nwaves);

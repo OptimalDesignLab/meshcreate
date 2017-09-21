@@ -77,6 +77,7 @@ for Pumi.
   See the comments at the top of the script to specify sizing and partition.
 
 ## Geometry classification
+### 2D:
   The mesh generators correctly classify the meshes on geometric entities.
   Specifically, the corners, edges, and interior of the domain are all 
   geometric entities, and the mesh entities that lie on those geometric
@@ -85,6 +86,16 @@ for Pumi.
   Geometric entities are number from 0 to n, starting from the bottom left
   corner, going counter-clockwise
 
+### 3D:
+  The geometric faces are classified as follows:
+  xy plane at zmin: 0
+  xz plane at ymin: 1
+  yz plane at xmax: 2
+  xz plane at ymax: 3
+  yz plane at ymin: 4
+  xy plane at zmax: 5
+
+  TODO: add vertex and edge
 ## Periodic Meshes
   Periodic mesh can be created by setting the boolean variable *periodic near
   the top of each source file.  Do not directly set the fields of the

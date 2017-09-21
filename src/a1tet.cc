@@ -421,12 +421,12 @@ int main(int argc, char** argv)
 
   int coord_order = 1;  // coordinate field polynomial order
 
-  double xmin = -1;
-  double ymin = -1;
-  double zmin = -1;
-  double xdist = 2;  // xmax - xmin
-  double ydist = 2;  // ymax - ymin
-  double zdist = 2;
+  double xmin = 0;
+  double ymin = -5;
+  double zmin =  0;
+  double xdist = 20;  // xmax - xmin
+  double ydist = 10;  // ymax - ymin
+  double zdist = 1;
   double volume_expected = xdist*ydist*zdist;
   double x_spacing = xdist/numElx;  // spacing of el
   double y_spacing = ydist/numEly;
@@ -2762,8 +2762,8 @@ void mapFunction(DomainSize domainsize, apf::Vector3& coords)
 */
 
 
-
 /*
+
   // calculate the element size in the x and y directions in non-dimensional
   // coordinates
   double hx = 1/( (double)domainsize.numElx);

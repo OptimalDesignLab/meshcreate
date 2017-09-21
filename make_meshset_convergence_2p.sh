@@ -10,7 +10,7 @@ first=20  # number of elements in each direction in the first mesh
 inc=5  # increment for the number of elements
 last=80  # number of elements in the last mesh
 nproc=48  # number of processors to partition the mesh into
-name_prefix="vortexcurve4_p1_p"  # the file name prefix
+name_prefix="vortexcurve9_p1_p"  # the file name prefix
 perturb=0  # control perturbation of mesh points
 echo "perturb = $perturb"
 

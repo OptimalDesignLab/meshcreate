@@ -6,10 +6,10 @@
 # where "$name_prefix", $idx are defined below
 
 # variable to determine the number of elements
-first=4  # number of elements in each direction in the first mesh
-inc=1  # increment for the number of elements
-last=8  # number of elements in the last mesh
-name_prefix="cube_p4_s"  # the file name prefix
+first=6  # number of elements in each direction in the first mesh
+inc=2  # increment for the number of elements
+last=15  # number of elements in the last mesh
+name_prefix="cubecurve_p1_s"  # the file name prefix
 perturb=0  # control perturbation of mesh points
 echo "perturb = $perturb"
 
