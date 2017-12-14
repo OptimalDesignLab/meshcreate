@@ -8,8 +8,10 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 #include <stdbool.h>
 #include <limits.h>
+
 //#include "funcs1.h"
 //#include "apfSBPShape.h"
 
@@ -55,7 +57,6 @@ void mapFunction(DomainSize domainsize, apf::Vector3& coords);
 // Arguments:
 //   1: number of rectangles in x direction
 //   2: number of rectangles in y direction
-//   3: whether or not to perturb the node locations
 //
 // Conventions:
 //   This mesh generator correctly classifies mesh entities onto geometric
@@ -66,7 +67,7 @@ int main(int argc, char** argv)
 {
   MPI_Init(&argc,&argv);
   PCU_Comm_Init();
-  if (argc < 2 || argc > 4)
+  if (argc < 2 || argc > 3)
   {
     std::cerr << "Error: wrong number of arguments" << std::endl;
     return 1;
@@ -120,21 +121,22 @@ int main(int argc, char** argv)
 
   int coord_order = 1;  // coordinate field polynomial order
 
+  // these should describe the bounding box of the original domain
   double xmin = 0;
-  double ymin = -5;
-  double xdist = 20;  // xmax - xmin
-  double ydist = 10;  // ymax - ymin
-  double x_spacing = xdist/numElx;  // spacing of el
-  double y_spacing = ydist/numEly;
+  double ymin = 0;
+  double xdist = 3;  // xmax - xmin
+  double ydist = 1;  // ymax - ymin
+//  double x_spacing = xdist/numElx;  // spacing of el
+//  double y_spacing = ydist/numEly;
 
-  double x_0 = xmin;  // x coordinate of lower left corner of current element
-  double y_0 = ymin ; // y coordinate of lower left corner of current element
-  double x_i = x_0;
-  double y_i = y_0;
-  double x_inner = x_i;
-  double y_inner = y_i;
-  double pert_fac = 10*M_PI;
-  double pert_mag = 0.1;
+//  double x_0 = xmin;  // x coordinate of lower left corner of current element
+//  double y_0 = ymin ; // y coordinate of lower left corner of current element
+//  double x_i = x_0;
+//  double y_i = y_0;
+  double x_inner = 0;
+  double y_inner = 0;
+//  double pert_fac = 10*M_PI;
+//  double pert_mag = 0.1;
 
   DomainSize domainsize = {xmin, xmin + xdist, ymin, ymin + ydist, numElx, numEly};
 
@@ -164,12 +166,52 @@ int main(int argc, char** argv)
   gmi_model* g = gmi_load(".null");
   apf::Mesh2* m = apf::makeEmptyMdsMesh(g, 2, isMatched);
 
+  // open the vertex coordinate file
+  std::ifstream ifs("coords.dat", std::ifstream::in);
+  if (!ifs.good())
+  {
+    std::cerr << "Error: coords.dat does not exist" << std::endl;
+    return 1;
+  }
+
+  // check that the number of points is correct
+  std::string s;
+  int nlines = 0;
+  while(!ifs.eof()) 
+  {
+    std::getline(ifs, s);
+    std::cout << "line = " << s << std::endl;
+    nlines++;
+  }
+
+  nlines--;  // don't count the blank line at the end
+
+  // reset stream to beginning
+  ifs.close();
+  ifs.open("coords.dat", std::ifstream::in);
+
+  if (nlines != nvert)
+  {
+    std::cerr << "Error: number of lines in file is " << nlines << " != " << nvert << " (number of vertices)" << std::endl;
+    return 1;
+  }
+
+  // buffer to hold each line
+//  char strbuff[256];
+
   // create all vertices
   for (int j = 0; j < (numEly+1); ++j)  // loop up columns (bottom to top)
   {
     for (int i = 0; i < (numElx+1); ++i) // loop over rows (left to right)
     {
-//       std::cout << "creating point at x = " << x_inner << " , y = " << y_inner << std::endl;
+      // read line from file
+      std::getline(ifs, s);
+//      ifs.getline(strbuff, 256);
+//      int nchars = ifs.gcount();
+//      std::cout << "nchars = " << nchars << std::endl;
+//      ifs.seekg(nchars, ifs.end);
+      sscanf(s.c_str(), "%lf %lf", &x_inner, &y_inner);
+      std::cout << "creating point at x = " << x_inner << " , y = " << y_inner << std::endl;
        coords_i[0] = x_inner;
        coords_i[1] = y_inner;
       
@@ -217,16 +259,19 @@ int main(int argc, char** argv)
          
        vertices[i][j] = m->createVert(model_entity);
        m->setPoint(vertices[i][j], 0, coords_i);
-       x_inner = x_inner + x_spacing + pert_mag*sin(apply_pert*pert_fac*x_inner);
-       y_inner = y_i + pert_mag*sin(apply_pert*pert_fac*x_inner);
+//       x_inner = x_inner + x_spacing + pert_mag*sin(apply_pert*pert_fac*x_inner);
+//       y_inner = y_i + pert_mag*sin(apply_pert*pert_fac*x_inner);
     }
 
-    y_i = y_i + y_spacing;  // increment y_i
-    x_i = x_0;  // reset x_i to beginning of row
+//    y_i = y_i + y_spacing;  // increment y_i
+//    x_i = x_0;  // reset x_i to beginning of row
 
-    y_inner = y_i;// + pert_mag*sin(apply_pert*pert_fac*y_i);
-    x_inner = x_i; // + pert_mag*sin(apply_pert*pert_fac*x_i);
+//    y_inner = y_i;// + pert_mag*sin(apply_pert*pert_fac*y_i);
+//    x_inner = x_i; // + pert_mag*sin(apply_pert*pert_fac*x_i);
   }
+
+
+  ifs.close();
 
   // create the boundary mesh edges, classifying them correctly
   int j = 0;  // row index (bottom to top)

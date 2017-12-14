@@ -421,12 +421,12 @@ int main(int argc, char** argv)
 
   int coord_order = 1;  // coordinate field polynomial order
 
-  double xmin = 0;
-  double ymin = -5;
-  double zmin =  0;
-  double xdist = 20;  // xmax - xmin
-  double ydist = 10;  // ymax - ymin
-  double zdist = 1;
+  double xmin = -1;
+  double ymin = -1;
+  double zmin = -1;
+  double xdist = 2;  // xmax - xmin
+  double ydist = 2;  // ymax - ymin
+  double zdist = 2;
   double volume_expected = xdist*ydist*zdist;
   double x_spacing = xdist/numElx;  // spacing of el
   double y_spacing = ydist/numEly;
@@ -445,9 +445,9 @@ int main(int argc, char** argv)
   double pert_fac = 10*M_PI;
   double pert_mag = 0.1;
 
-  bool xzperiodic = true;
-  bool xyperiodic = true;
-  bool yzperiodic = true;
+  bool xzperiodic = false;
+  bool xyperiodic = false;
+  bool yzperiodic = false;
   Periodic periodic = {.xz=xzperiodic, .xy=xyperiodic, .yz=yzperiodic};
 
   bool isMatched = false;
