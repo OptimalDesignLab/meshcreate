@@ -11,7 +11,7 @@
 
 # 2D meshes only (for now)
 
-# ARGS[1]  = name of .su2 file (including extension
+# ARGS[1]  = name of .su2 file (including extension)
 
 if length(ARGS) != 1
   println(STDERR, "Usage: extract_su2.jl fname.su2")

@@ -70,6 +70,7 @@ int main(int argc, char** argv)
   if (argc < 2 || argc > 3)
   {
     std::cerr << "Error: wrong number of arguments" << std::endl;
+    std::cerr << "usage: " << argv[1] << " numElx numEly" << std::endl;
     return 1;
   }
   // Problem 3
@@ -113,8 +114,8 @@ int main(int argc, char** argv)
   }
 
   Counts counts = {numElx, numEly};
-  bool xperiodic = true;  // make x direction periodic
-  bool yperiodic = true; // make y direction periodic
+  bool xperiodic = false;  // make x direction periodic
+  bool yperiodic = false; // make y direction periodic
   // making x direction direction periodic mean setting edges along y 
   // axis to match, hence the reversal
   Periodic periodic = {yperiodic, xperiodic};

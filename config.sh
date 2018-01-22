@@ -11,7 +11,7 @@ cd ./build
 cmake .. \
   -DSCOREC_PREFIX=$SCOREC_PREFIX \
   -DCMAKE_CXX_COMPILER="mpicxx" \
-  -DCMAKE_CXX_FLAGS="-O2 -g -Wall" \
+  -DCMAKE_CXX_FLAGS="-O2 -g -Wall -std=c++11" \
   -DCMAKE_INSTALL_PREFIX=$installdir
 
 

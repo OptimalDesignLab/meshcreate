@@ -421,9 +421,9 @@ int main(int argc, char** argv)
 
   int coord_order = 1;  // coordinate field polynomial order
 
-  double xmin = -1;
-  double ymin = -1;
-  double zmin = -1;
+  double xmin = 1;
+  double ymin = 1;
+  double zmin = 1;
   double xdist = 2;  // xmax - xmin
   double ydist = 2;  // ymax - ymin
   double zdist = 2;
