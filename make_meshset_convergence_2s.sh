@@ -1,9 +1,9 @@
 #!/bin/bash
 # variable to determine the number of elements
-first=5
-inc=5
-last=30
-name_prefix="periodiccurve_s"
+first=4
+inc=4
+last=24
+name_prefix="squarevortex_bc_s"
 # control perturbation of mesh points
 perturb=0
 echo "perturb = $perturb"

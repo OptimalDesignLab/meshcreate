@@ -3,9 +3,12 @@ This repo contains some small programs useful for creating structured meshes
 for Pumi.
 
   `a1tri2`: creates a mesh of triangular elements on a square domain
+
   `a1tri2_polar`: creates a mesh of triangular elements on a quarter 
                   circle domain
+
   `a1tet`: creates a regular mesh of tetrahedra on a square domain
+
 
 ## Compiling
   CMake is used internally to build all executables and install them to 

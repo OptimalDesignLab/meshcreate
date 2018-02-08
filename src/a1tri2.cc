@@ -112,8 +112,8 @@ int main(int argc, char** argv)
   }
 
   Counts counts = {numElx, numEly};
-  bool xperiodic = true;  // make x direction periodic
-  bool yperiodic = true; // make y direction periodic
+  bool xperiodic = false;  // make x direction periodic
+  bool yperiodic = false; // make y direction periodic
   // making x direction direction periodic mean setting edges along y 
   // axis to match, hence the reversal
   Periodic periodic = {yperiodic, xperiodic};
@@ -122,8 +122,8 @@ int main(int argc, char** argv)
 
   double xmin = 0;
   double ymin = -5;
-  double xdist = 20;  // xmax - xmin
-  double ydist = 10;  // ymax - ymin
+  double xdist = 10;  // xmax - xmin
+  double ydist = 20;  // ymax - ymin
   double x_spacing = xdist/numElx;  // spacing of el
   double y_spacing = ydist/numEly;
 
