@@ -135,6 +135,8 @@ int main(int argc, char** argv)
   double y_inner = y_i;
   double pert_fac = 10*M_PI;
   double pert_mag = 0.1;
+  const bool flip_diag = true;  // false: diagonal goes from lower right to upper left
+                                 // true: diagonal goes from lower left to upper right
 
   DomainSize domainsize = {xmin, xmin + xdist, ymin, ymin + ydist, numElx, numEly};
 
@@ -310,10 +312,6 @@ int main(int argc, char** argv)
 //      std::cout << "\ncreating element " << i << ", " << j << std::endl;
 //      int el_num = i + numElx*j;
 //      std::cout << "creating element i = " << i << " , j = " << j << std::endl;
-      // get correct vertices
-      vertices_i[0] = vertices[i][j];
-      vertices_i[1] = vertices[i+1][j];
-      vertices_i[2] = vertices[i][j+1];
 //      std::cout << "Element " << el_num << " has verticies "; 
 //      std::cout << i + ((numElx+1)*j) << " , " << i+1 + ((numElx+1)*j) << " , " << i+1 + ((numElx+1)*(j+1));
 //      std::cout << " , " << i + ((numElx+1)*(j+1)) << std::endl;
@@ -348,24 +346,32 @@ int main(int argc, char** argv)
        if (do_bottom)
        {
 //         std::cout << "creating bottom edge" << std::endl;
-         edge_verts[0] = vertices_i[0];
-         edge_verts[1] = vertices_i[1];
+         edge_verts[0] = vertices[i][j]; //vertices_i[0];
+         edge_verts[1] = vertices[i+1][j]; //vertices_i[1];
 //         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
          m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
        }
        if (do_diag)
        {
 //         std::cout << "creating diagonal edge" << std::endl;
-         edge_verts[0] = vertices_i[1];
-         edge_verts[1] = vertices_i[2];
+          if (flip_diag)
+          {
+            edge_verts[0] = vertices[i][j];
+            edge_verts[1] = vertices[i+1][j+1];
+
+          } else
+          {
+            edge_verts[0] = vertices[i+1][j]; //vertices_i[1];
+            edge_verts[1] = vertices[i][j+1]; //vertices_i[2];
+          }
 //         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
          m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
        }
        if (do_left)
        {
 //         std::cout << "creating left edge" << std::endl;
-         edge_verts[0] = vertices_i[0];
-         edge_verts[1] = vertices_i[2];
+         edge_verts[0] = vertices[i][j]; //vertices_i[0];
+         edge_verts[1] = vertices[i][j+1]; //vertices_i[2];
 //         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
          m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
        }
@@ -379,16 +385,8 @@ int main(int argc, char** argv)
       do_top = false;
 
 
-
-      // counterclockwise ordering
-//      std::cout << "about to create first triangle" << std::endl;
-      apf::buildElement(m, model_entity, apf::Mesh::TRIANGLE, vertices_i);
 //      m->createEntity(apf::Mesh::TRIANGLE, model_entity, vertices_i);
 
-      // do other half of rectangle
-      vertices_i[0] = vertices[i+1][j];
-      vertices_i[1] = vertices[i+1][j+1];
-      vertices_i[2] = vertices[i][j+1];
 /*
       std::cout << "numElx = " << numElx << std::endl;
       std::cout << "numEly = " << numEly << std::endl;
@@ -473,16 +471,16 @@ int main(int argc, char** argv)
        if (do_right)
        {
 //         std::cout << "creating right edge" << std::endl;
-         edge_verts[0] = vertices_i[0];
-         edge_verts[1] = vertices_i[1];
+         edge_verts[0] = vertices[i+1][j]; //vertices_i[0];
+         edge_verts[1] = vertices[i+1][j+1]; //vertices_i[1];
 //         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
          m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
        }
        if (do_top)
        {
 //         std::cout << "creating top edge" << std::endl;
-         edge_verts[0] = vertices_i[1];
-         edge_verts[1] = vertices_i[2];
+         edge_verts[0] = vertices[i+1][j+1]; //vertices_i[1];
+         edge_verts[1] = vertices[i][j+1]; //vertices_i[2];
 //         std::cout << " with vertices " << edge_verts[0] << " " << edge_verts[1] << std::endl;
          m->createEntity(apf::Mesh::EDGE, model_entity, edge_verts);
        }
@@ -493,6 +491,36 @@ int main(int argc, char** argv)
       do_left = false;
       do_right = false;
       do_top = false;
+
+      if (flip_diag)
+      {
+        vertices_i[0] = vertices[i][j];
+        vertices_i[1] = vertices[i+1][j];
+        vertices_i[2] = vertices[i+1][j+1];
+      } else
+      {
+        vertices_i[0] = vertices[i][j];
+        vertices_i[1] = vertices[i+1][j];
+        vertices_i[2] = vertices[i][j+1];
+      }
+
+      // counterclockwise ordering
+//      std::cout << "about to create first triangle" << std::endl;
+      apf::buildElement(m, model_entity, apf::Mesh::TRIANGLE, vertices_i);
+
+      // do other half of rectangle
+      if (flip_diag)
+      {
+        vertices_i[0] = vertices[i][j];
+        vertices_i[1] = vertices[i+1][j+1];
+        vertices_i[2] = vertices[i][j+1];
+
+      } else
+      {
+        vertices_i[0] = vertices[i+1][j];
+        vertices_i[1] = vertices[i+1][j+1];
+        vertices_i[2] = vertices[i][j+1];
+      }
 
       apf::buildElement(m, model_entity, apf::Mesh::TRIANGLE, vertices_i);
 
